@@ -1,10 +1,7 @@
+server:
+  port: 8080
 spring:
   application:
     name: ongoing
-  datasource:
-    url: jdbc:postgresql://localhost:5432/local_db
-    username: local_user
-    password: local_password
-
-  jpa:
-    show-sql: true
+  profiles:
+    active: dev
