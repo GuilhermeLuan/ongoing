@@ -10,6 +10,9 @@ spring:
     properties:
       hibernate:
         format_sql: true
+  docker:
+    compose:
+      enabled: true
 logging:
   level:
     root: INFO

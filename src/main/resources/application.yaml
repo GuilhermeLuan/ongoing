@@ -4,4 +4,4 @@ spring:
   application:
     name: ongoing
   profiles:
-    active: dev
+    active: ${ACTIVE_PROFILE}
