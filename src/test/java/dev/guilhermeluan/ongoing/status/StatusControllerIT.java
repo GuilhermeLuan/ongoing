@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import static io.restassured.RestAssured.given;
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 
-class StatusControllerIntegrationTest extends BaseIntegrationTest {
+class StatusControllerIT extends BaseIntegrationTest {
 
     @Test
     void shouldReturnStatusInfo() {
