@@ -96,6 +96,12 @@
 			<artifactId>testcontainers-postgresql</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>net.javacrumbs.json-unit</groupId>
+			<artifactId>json-unit-assertj</artifactId>
+			<version>5.1.0</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>

@@ -9,5 +9,5 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 public interface TestcontainersConfigurations {
     @Container
     @ServiceConnection
-    PostgreSQLContainer postgreSQLContainer = new PostgreSQLContainer("postgres:15-alpine");
+    PostgreSQLContainer postgreSQLContainer = new PostgreSQLContainer("postgres:16.0-alpine3.18");
 }
