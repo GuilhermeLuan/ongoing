@@ -3,5 +3,6 @@ spring:
     lazy-initialization: true
   application:
     name: ongoing
-  hibernate:
-    ddl-auto: update
+  jpa:
+    hibernate:
+      ddl-auto: update
