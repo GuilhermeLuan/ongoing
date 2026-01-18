@@ -18,13 +18,24 @@ public class StatusController {
     }
 
     @GetMapping
-    public ResponseEntity<Status> getStatus() {
+    public ResponseEntity<StatusResponse> getStatus() {
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        Integer maxConnections = repository.getMaxConnections();
+        Integer openedConnections = repository.getOpenedConnections();
+        String version = repository.getVersion();
 
-        Status status = Status.builder()
-                .timestamp(new Timestamp(System.currentTimeMillis()))
-                .maxConnections(repository.getDatabaseMaxConnections())
-                .openedConnections(repository.getOpenedConnections())
-                .version(repository.getDatabaseVersion())
+        StatusResponse.DatabaseInfo databaseInfo = StatusResponse.DatabaseInfo.builder()
+                .maxConnections(maxConnections)
+                .openedConnections(openedConnections)
+                .version(version)
+                .build();
+        StatusResponse.Dependencies dependencies = StatusResponse.Dependencies.builder()
+                .database(databaseInfo)
+                .build();
+
+        StatusResponse status = StatusResponse.builder()
+                .updatedAt(timestamp)
+                .dependencies(dependencies)
                 .build();
 
         return ResponseEntity.ok(status);

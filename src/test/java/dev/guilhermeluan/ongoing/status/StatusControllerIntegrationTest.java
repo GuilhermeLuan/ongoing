@@ -18,10 +18,10 @@ class StatusControllerIntegrationTest extends BaseIntegrationTest {
                 .log().all()
                 .extract().body().asString();
 
-        assertThatJson(response).node("maxConnections").isNotNull().isEqualTo(100);
-        assertThatJson(response).node("timestamp").isNotNull();
-        assertThatJson(response).node("version").isNotNull().isString().isEqualTo("16.0");
-        assertThatJson(response).node("openedConnections").isNotNull().isNumber();
+        assertThatJson(response).node("updatedAt").isNotNull();
+        assertThatJson(response).node("dependencies.database.maxConnections").isNotNull().isEqualTo(100);
+        assertThatJson(response).node("dependencies.database.version").isNotNull().isString().isEqualTo("16.0");
+        assertThatJson(response).node("dependencies.database.openedConnections").isNotNull().isNumber();
 
     }
 

@@ -11,12 +11,12 @@ public class StatusRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public String getDatabaseVersion() {
+    public String getVersion() {
         String sql = "SHOW server_version;";
         return jdbcTemplate.queryForObject(sql, String.class);
     }
 
-    public Integer getDatabaseMaxConnections() {
+    public Integer getMaxConnections() {
         String sql = "SHOW max_connections;";
         return jdbcTemplate.queryForObject(sql, Integer.class);
     }
