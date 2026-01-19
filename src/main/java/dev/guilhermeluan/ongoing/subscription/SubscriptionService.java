@@ -4,7 +4,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class SubscriptionService {
@@ -19,7 +18,7 @@ public class SubscriptionService {
     public List<SubscriptionResponse> findAll() {
         return repository.findAll().stream()
                 .map(SubscriptionResponse::fromEntity)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional(readOnly = true)

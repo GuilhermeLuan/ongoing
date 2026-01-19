@@ -1,5 +1,6 @@
 package dev.guilhermeluan.ongoing.subscription;
 
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,13 +30,13 @@ public class SubscriptionController {
     }
 
     @PostMapping
-    public ResponseEntity<SubscriptionResponse> createSubscription(@RequestBody SubscriptionRequest request) {
+    public ResponseEntity<SubscriptionResponse> createSubscription(@Valid @RequestBody SubscriptionRequest request) {
         SubscriptionResponse subscription = service.create(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(subscription);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<SubscriptionResponse> updateSubscription(@PathVariable Long id, @RequestBody SubscriptionRequest request) {
+    public ResponseEntity<SubscriptionResponse> updateSubscription(@PathVariable Long id, @Valid @RequestBody SubscriptionRequest request) {
         SubscriptionResponse subscription = service.update(id, request);
         return ResponseEntity.ok(subscription);
     }
