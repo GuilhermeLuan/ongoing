@@ -1,4 +1,4 @@
-package dev.guilhermeluan.ongoing.subscriptions;
+package dev.guilhermeluan.ongoing.subscriptions.entitites;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -15,7 +15,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Entity
 @Table(name = "tb_subscriptions")
-public class SubscriptionsEntity {
+public class Subscriptions {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -49,17 +49,17 @@ public class SubscriptionsEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_categories")
-    private CategoryEntity category;
+    private Category category;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_payment_method")
-    private PaymentMethodEntity paymentMethod;
+    private PaymentMethod paymentMethod;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_billing_cycle")
-    private BillingCycleEntity billingCycle;
+    private BillingCycle billingCycle;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_subscription_type")
-    private SubscriptionTypeEntity subscriptionType;
+    private SubscriptionType subscriptionType;
 }

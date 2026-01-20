@@ -1,4 +1,4 @@
-package dev.guilhermeluan.ongoing.subscriptions;
+package dev.guilhermeluan.ongoing.subscriptions.entitites;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Entity
 @Table(name = "tb_payment_methods")
-public class PaymentMethodEntity {
+public class PaymentMethod {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
