@@ -1,12 +1,12 @@
 package dev.guilhermeluan.ongoing.subscriptions;
 
+import dev.guilhermeluan.ongoing.subscriptions.dto.SubscriptionRequestDto;
 import dev.guilhermeluan.ongoing.subscriptions.dto.SubscriptionResponseDto;
 import dev.guilhermeluan.ongoing.subscriptions.entitites.Subscriptions;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -20,10 +20,42 @@ public class SubscriptionsController {
     private final SubscriptionsService subscriptionsService;
 
     @GetMapping
-    public ResponseEntity<List<SubscriptionResponseDto>> getAllSubscriptions() {
+    public ResponseEntity<List<SubscriptionResponseDto>> findAll() {
         List<Subscriptions> subscriptions = subscriptionsService.findAll();
 
         List<SubscriptionResponseDto> response = subscriptionsMapper.toSubscriptionResponse(subscriptions);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{id}")
+    ResponseEntity<SubscriptionResponseDto> findById(@PathVariable long id) {
+        Subscriptions subscription = subscriptionsService.findByIdOrThrowNotFoundException(id);
+
+        SubscriptionResponseDto response = subscriptionsMapper.toSubscriptionResponse(subscription);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping
+    public ResponseEntity<SubscriptionResponseDto> create(@RequestBody SubscriptionRequestDto request) {
+
+        Subscriptions subscriptionToSave = subscriptionsMapper.toSubscription(request);
+
+        Subscriptions createdSubscription = subscriptionsService.save(subscriptionToSave);
+
+        SubscriptionResponseDto response = subscriptionsMapper.toSubscriptionResponse(createdSubscription);
+
+        return ResponseEntity.status(HttpStatus.CREATED.value()).body(response);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<SubscriptionResponseDto> update(@PathVariable long id, @RequestBody SubscriptionRequestDto request) {
+        Subscriptions subscriptionToUpdate = subscriptionsMapper.toSubscription(request);
+
+        Subscriptions updatedSubscription = subscriptionsService.update(id, subscriptionToUpdate);
+
+        SubscriptionResponseDto response = subscriptionsMapper.toSubscriptionResponse(updatedSubscription);
 
         return ResponseEntity.ok(response);
     }

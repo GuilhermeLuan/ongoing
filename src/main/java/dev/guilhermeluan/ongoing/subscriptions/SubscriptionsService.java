@@ -23,12 +23,15 @@ public class SubscriptionsService {
         return subscriptionsRepository.findById(id).orElseThrow(() -> new SubscriptionNotFoundException(id));
     }
 
-    public void delete(Subscriptions subscription) {
-        subscriptionsRepository.delete(subscription);
+    public void deleteById(Long id) {
+        findByIdOrThrowNotFoundException(id);
+        subscriptionsRepository.deleteById(id);
     }
 
-    public void deleteById(Long id) {
-        subscriptionsRepository.deleteById(id);
+    public Subscriptions update(Long id, Subscriptions subscriptionToUpdate) {
+        Subscriptions existingSubscription = findByIdOrThrowNotFoundException(id);
+        subscriptionToUpdate.setId(existingSubscription.getId());
+        return subscriptionsRepository.save(subscriptionToUpdate);
     }
 
 }

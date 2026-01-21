@@ -35,12 +35,15 @@ public class Subscriptions {
     @Column(name = "next_payment_date", nullable = false)
     private LocalDate nextPaymentDate;
 
+    @Builder.Default
     @Column(nullable = false)
     private Boolean active = true;
 
+    @Builder.Default
     @Column(nullable = false)
     private Boolean notify = true;
 
+    @Builder.Default
     @Column(nullable = false, length = 3)
     private String currency = "BRL";
 
