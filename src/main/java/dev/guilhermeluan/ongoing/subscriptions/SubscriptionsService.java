@@ -1,6 +1,8 @@
 package dev.guilhermeluan.ongoing.subscriptions;
 
+import dev.guilhermeluan.ongoing.exception.NotFoundException;
 import dev.guilhermeluan.ongoing.subscriptions.entities.Subscriptions;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,7 +22,7 @@ public class SubscriptionsService {
     }
 
     public Subscriptions findByIdOrThrowNotFoundException(Long id) {
-        return subscriptionsRepository.findById(id).orElseThrow(() -> new SubscriptionNotFoundException(id));
+        return subscriptionsRepository.findById(id).orElseThrow(() -> new NotFoundException(HttpStatus.NOT_FOUND, "Subscription not found"));
     }
 
     public void deleteById(Long id) {

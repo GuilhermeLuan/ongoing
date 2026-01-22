@@ -165,6 +165,36 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                 .build();
     }
 
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("provideInvalidSubscriptionRequests")
+    void create_ShouldReturnBadRequest_WhenValidationFails(String testName, SubscriptionRequestDto request, String expectedErrorMessage) {
+        String response = given().contentType(ContentType.JSON)
+                .body(request)
+                .when().post(API_URL)
+                .then()
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .log().all()
+                .extract().body().asString();
+
+        assertThat(response).contains(expectedErrorMessage);
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("provideInvalidSubscriptionRequests")
+    void update_ShouldReturnBadRequest_WhenValidationFails(String testName, SubscriptionRequestDto request, String expectedErrorMessage) {
+        List<Subscriptions> subscriptions = insertSampleSubscriptions();
+
+        String response = given().contentType(ContentType.JSON)
+                .body(request)
+                .when().put(API_URL + "/{id}", subscriptions.getFirst().getId())
+                .then()
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .log().all()
+                .extract().body().asString();
+
+        assertThat(response).contains(expectedErrorMessage);
+    }
+
     private static Stream<Arguments> provideInvalidSubscriptionRequests() {
         LocalDate now = LocalDate.now();
         LocalDate nextMonth = now.plusMonths(1);
@@ -226,35 +256,5 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                         "Logo URL must be at most 255 characters"
                 )
         );
-    }
-
-    @ParameterizedTest(name = "{0}")
-    @MethodSource("provideInvalidSubscriptionRequests")
-    void create_ShouldReturnBadRequest_WhenValidationFails(String testName, SubscriptionRequestDto request, String expectedErrorMessage) {
-        String response = given().contentType(ContentType.JSON)
-                .body(request)
-                .when().post(API_URL)
-                .then()
-                .statusCode(HttpStatus.BAD_REQUEST.value())
-                .log().all()
-                .extract().body().asString();
-
-        assertThat(response).contains(expectedErrorMessage);
-    }
-
-    @ParameterizedTest(name = "{0}")
-    @MethodSource("provideInvalidSubscriptionRequests")
-    void update_ShouldReturnBadRequest_WhenValidationFails(String testName, SubscriptionRequestDto request, String expectedErrorMessage) {
-        List<Subscriptions> subscriptions = insertSampleSubscriptions();
-
-        String response = given().contentType(ContentType.JSON)
-                .body(request)
-                .when().put(API_URL + "/{id}", subscriptions.getFirst().getId())
-                .then()
-                .statusCode(HttpStatus.BAD_REQUEST.value())
-                .log().all()
-                .extract().body().asString();
-
-        assertThat(response).contains(expectedErrorMessage);
     }
 }
