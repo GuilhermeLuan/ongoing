@@ -13,7 +13,19 @@ spring:
   docker:
     compose:
       enabled: true
+  web:
+    error:
+      include-stacktrace: never
+      include-binding-errors: always
+
 logging:
   level:
     root: INFO
     dev.guilhermeluan: DEBUG
+
+server:
+  tomcat:
+    threads:
+      max: 20
+
+

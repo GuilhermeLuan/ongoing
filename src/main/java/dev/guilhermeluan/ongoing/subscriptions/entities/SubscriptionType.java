@@ -1,4 +1,4 @@
-package dev.guilhermeluan.ongoing.subscriptions.entitites;
+package dev.guilhermeluan.ongoing.subscriptions.entities;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -11,8 +11,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "tb_categories")
-public class Category {
+@Table(name = "tb_subscription_types")
+public class SubscriptionType {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

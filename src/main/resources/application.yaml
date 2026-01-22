@@ -5,3 +5,6 @@ spring:
     name: ongoing
   profiles:
     active: ${ACTIVE_PROFILE}
+  threads:
+    virtual:
+      enabled: true

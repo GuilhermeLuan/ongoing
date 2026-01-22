@@ -11,7 +11,7 @@ public record SubscriptionResponseDto(
         LocalDate startDate,
         LocalDate nextPaymentDate,
         Boolean active,
-        Boolean isNotifyEnabled,
+        Boolean notifyUser,
         String currency,
         String logoUrl,
         Long categoryId,

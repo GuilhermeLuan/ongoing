@@ -1,4 +1,4 @@
-package dev.guilhermeluan.ongoing.subscriptions.entitites;
+package dev.guilhermeluan.ongoing.subscriptions.entities;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

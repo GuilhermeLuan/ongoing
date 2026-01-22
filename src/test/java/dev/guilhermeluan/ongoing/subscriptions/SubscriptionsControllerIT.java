@@ -2,16 +2,20 @@ package dev.guilhermeluan.ongoing.subscriptions;
 
 import dev.guilhermeluan.ongoing.config.BaseIntegrationTest;
 import dev.guilhermeluan.ongoing.subscriptions.dto.SubscriptionRequestDto;
-import dev.guilhermeluan.ongoing.subscriptions.entitites.Subscriptions;
+import dev.guilhermeluan.ongoing.subscriptions.entities.Subscriptions;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static io.restassured.RestAssured.given;
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
@@ -159,5 +163,98 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                 .notify(true)
                 .active(true)
                 .build();
+    }
+
+    private static Stream<Arguments> provideInvalidSubscriptionRequests() {
+        LocalDate now = LocalDate.now();
+        LocalDate nextMonth = now.plusMonths(1);
+
+        return Stream.of(
+                Arguments.of(
+                        "Name is blank",
+                        new SubscriptionRequestDto("", "Description", new BigDecimal("10.00"), now, nextMonth, true, true, "BRL", null, null, null, null, null),
+                        "Name is required"
+                ),
+                Arguments.of(
+                        "Name is null",
+                        new SubscriptionRequestDto(null, "Description", new BigDecimal("10.00"), now, nextMonth, true, true, "BRL", null, null, null, null, null),
+                        "Name is required"
+                ),
+                Arguments.of(
+                        "Name exceeds 255 characters",
+                        new SubscriptionRequestDto("A".repeat(256), "Description", new BigDecimal("10.00"), now, nextMonth, true, true, "BRL", null, null, null, null, null),
+                        "Name must be at most 255 characters"
+                ),
+                Arguments.of(
+                        "Description exceeds 255 characters",
+                        new SubscriptionRequestDto("Valid Name", "D".repeat(256), new BigDecimal("10.00"), now, nextMonth, true, true, "BRL", null, null, null, null, null),
+                        "Description must be at most 255 characters"
+                ),
+                Arguments.of(
+                        "Value is null",
+                        new SubscriptionRequestDto("Valid Name", "Description", null, now, nextMonth, true, true, "BRL", null, null, null, null, null),
+                        "Value is required"
+                ),
+                Arguments.of(
+                        "Value is negative",
+                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("-10.00"), now, nextMonth, true, true, "BRL", null, null, null, null, null),
+                        "Value must be positive"
+                ),
+                Arguments.of(
+                        "Value is zero",
+                        new SubscriptionRequestDto("Valid Name", "Description", BigDecimal.ZERO, now, nextMonth, true, true, "BRL", null, null, null, null, null),
+                        "Value must be positive"
+                ),
+                Arguments.of(
+                        "Start date is null",
+                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), null, nextMonth, true, true, "BRL", null, null, null, null, null),
+                        "Start date is required"
+                ),
+                Arguments.of(
+                        "Next payment date is null",
+                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), now, null, true, true, "BRL", null, null, null, null, null),
+                        "Next payment date is required"
+                ),
+                Arguments.of(
+                        "Currency exceeds 3 characters",
+                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), now, nextMonth, true, true, "BRRL", null, null, null, null, null),
+                        "Currency must be at most 3 characters"
+                ),
+                Arguments.of(
+                        "Logo URL exceeds 255 characters",
+                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), now, nextMonth, true, true, "BRL", "L".repeat(256), null, null, null, null),
+                        "Logo URL must be at most 255 characters"
+                )
+        );
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("provideInvalidSubscriptionRequests")
+    void create_ShouldReturnBadRequest_WhenValidationFails(String testName, SubscriptionRequestDto request, String expectedErrorMessage) {
+        String response = given().contentType(ContentType.JSON)
+                .body(request)
+                .when().post(API_URL)
+                .then()
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .log().all()
+                .extract().body().asString();
+
+        assertThat(response).contains(expectedErrorMessage);
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("provideInvalidSubscriptionRequests")
+    void update_ShouldReturnBadRequest_WhenValidationFails(String testName, SubscriptionRequestDto request, String expectedErrorMessage) {
+        List<Subscriptions> subscriptions = insertSampleSubscriptions();
+
+        String response = given().contentType(ContentType.JSON)
+                .body(request)
+                .when().put(API_URL + "/{id}", subscriptions.getFirst().getId())
+                .then()
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .log().all()
+                .extract().body().asString();
+
+        assertThat(response).contains(expectedErrorMessage);
     }
 }

@@ -2,7 +2,8 @@ package dev.guilhermeluan.ongoing.subscriptions;
 
 import dev.guilhermeluan.ongoing.subscriptions.dto.SubscriptionRequestDto;
 import dev.guilhermeluan.ongoing.subscriptions.dto.SubscriptionResponseDto;
-import dev.guilhermeluan.ongoing.subscriptions.entitites.Subscriptions;
+import dev.guilhermeluan.ongoing.subscriptions.entities.Subscriptions;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,7 +39,7 @@ public class SubscriptionsController {
     }
 
     @PostMapping
-    public ResponseEntity<SubscriptionResponseDto> create(@RequestBody SubscriptionRequestDto request) {
+    public ResponseEntity<SubscriptionResponseDto> create(@RequestBody @Valid SubscriptionRequestDto request) {
 
         Subscriptions subscriptionToSave = subscriptionsMapper.toSubscription(request);
 
@@ -50,7 +51,7 @@ public class SubscriptionsController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<SubscriptionResponseDto> update(@PathVariable long id, @RequestBody SubscriptionRequestDto request) {
+    public ResponseEntity<SubscriptionResponseDto> update(@PathVariable long id, @RequestBody @Valid SubscriptionRequestDto request) {
         Subscriptions subscriptionToUpdate = subscriptionsMapper.toSubscription(request);
 
         Subscriptions updatedSubscription = subscriptionsService.update(id, subscriptionToUpdate);

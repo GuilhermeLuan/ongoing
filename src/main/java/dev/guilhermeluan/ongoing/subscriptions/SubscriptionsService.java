@@ -1,6 +1,6 @@
 package dev.guilhermeluan.ongoing.subscriptions;
 
-import dev.guilhermeluan.ongoing.subscriptions.entitites.Subscriptions;
+import dev.guilhermeluan.ongoing.subscriptions.entities.Subscriptions;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
