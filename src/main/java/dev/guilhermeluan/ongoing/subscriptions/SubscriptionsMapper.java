@@ -3,8 +3,11 @@ package dev.guilhermeluan.ongoing.subscriptions;
 import dev.guilhermeluan.ongoing.subscriptions.dto.SubscriptionRequestDto;
 import dev.guilhermeluan.ongoing.subscriptions.dto.SubscriptionResponseDto;
 import dev.guilhermeluan.ongoing.subscriptions.entities.Subscriptions;
+import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.mapstruct.MappingConstants;
 
 import java.util.List;
@@ -23,4 +26,7 @@ public interface SubscriptionsMapper {
     @Mapping(source = "notifyUser", target = "notify")
     Subscriptions toSubscription(SubscriptionRequestDto dto);
 
+    @Mapping(source = "notifyUser", target = "notify") 
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void updateSubscriptionFromDto(SubscriptionRequestDto dto, @MappingTarget Subscriptions subscription);
 }

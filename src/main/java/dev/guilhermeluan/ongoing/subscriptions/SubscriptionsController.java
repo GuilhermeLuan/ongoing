@@ -52,9 +52,11 @@ public class SubscriptionsController {
 
     @PutMapping("/{id}")
     public ResponseEntity<SubscriptionResponseDto> update(@PathVariable long id, @RequestBody @Valid SubscriptionRequestDto request) {
-        Subscriptions subscriptionToUpdate = subscriptionsMapper.toSubscription(request);
+        Subscriptions subscription = subscriptionsService.findByIdOrThrowNotFoundException(id);
+        
+        subscriptionsMapper.updateSubscriptionFromDto(request, subscription);
 
-        Subscriptions updatedSubscription = subscriptionsService.update(id, subscriptionToUpdate);
+        Subscriptions updatedSubscription = subscriptionsService.update(id, subscription);
 
         SubscriptionResponseDto response = subscriptionsMapper.toSubscriptionResponse(updatedSubscription);
 
