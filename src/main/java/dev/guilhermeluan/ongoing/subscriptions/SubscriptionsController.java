@@ -26,7 +26,7 @@ public class SubscriptionsController {
 
         List<SubscriptionResponseDto> response = subscriptionsMapper.toSubscriptionResponse(subscriptions);
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.status(HttpStatus.OK.value()).body(response);
     }
 
     @GetMapping("/{id}")
@@ -35,7 +35,7 @@ public class SubscriptionsController {
 
         SubscriptionResponseDto response = subscriptionsMapper.toSubscriptionResponse(subscription);
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.status(HttpStatus.OK.value()).body(response);
     }
 
     @PostMapping
@@ -58,7 +58,13 @@ public class SubscriptionsController {
 
         SubscriptionResponseDto response = subscriptionsMapper.toSubscriptionResponse(updatedSubscription);
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.status(HttpStatus.OK.value()).body(response);
+    }
+
+    @DeleteMapping({"/{id}"})
+    public ResponseEntity<Void> delete(@PathVariable long id) {
+        subscriptionsService.deleteById(id);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
 }

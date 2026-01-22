@@ -145,25 +145,49 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
         assertThat(subscriptionUpdated.getValue()).isEqualByComparingTo(new BigDecimal("89.95"));
     }
 
-    private List<Subscriptions> insertSampleSubscriptions() {
-        Subscriptions subscriptions = subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), LocalDate.now(), LocalDate.now().plusMonths(1)));
-        Subscriptions subscriptions1 = subscriptionsRepository.save(createSubscription("Spotify", new BigDecimal("19.95"), LocalDate.now().minusDays(10), LocalDate.now().plusMonths(1)));
+    @Test
+    void update_ShouldThrowNotFoundException_WhenSubscriptionIsNotFound() {
+        Long id = 99L;
 
-        return List.of(subscriptions, subscriptions1);
+        given().contentType(ContentType.JSON)
+                .body(insertSampleSubscriptions().getFirst())
+                .when().put(API_URL + "/{id}", id)
+                .then()
+                .statusCode(HttpStatus.NOT_FOUND.value())
+                .log().all()
+                .extract().body().asString();
     }
 
-    private Subscriptions createSubscription(String name, BigDecimal value, LocalDate startDate, LocalDate nextPaymentDate) {
-        return Subscriptions.builder()
-                .name(name)
-                .description(name + " mensal")
-                .value(value)
-                .startDate(startDate)
-                .nextPaymentDate(nextPaymentDate)
-                .currency("BRL")
-                .notify(true)
-                .active(true)
-                .build();
+    @Test
+    void delete_ShouldDeleteSubscription() {
+        Subscriptions subscription = createSubscription("Netflix", new BigDecimal("39.95"), LocalDate.now(), LocalDate.now().plusMonths(1));
+
+        subscriptionsRepository.save(subscription);
+
+
+        given().contentType(ContentType.JSON)
+                .when().delete(API_URL + "/{id}", subscription.getId())
+                .then()
+                .statusCode(HttpStatus.NO_CONTENT.value())
+                .log().all()
+                .extract().body().asString();
+
+        assertThat(subscriptionsRepository.findAll()).isEmpty();
     }
+
+    @Test
+    void delete_ShouldThrowNotFoundException_WhenSubscriptionIsNotFound() {
+
+        Long id = 99L;
+
+        given().contentType(ContentType.JSON)
+                .when().delete(API_URL + "/{id}", id)
+                .then()
+                .statusCode(HttpStatus.NOT_FOUND.value())
+                .log().all()
+                .extract().body().asString();
+    }
+
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("provideInvalidSubscriptionRequests")
@@ -256,5 +280,25 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                         "Logo URL must be at most 255 characters"
                 )
         );
+    }
+
+    private List<Subscriptions> insertSampleSubscriptions() {
+        Subscriptions subscriptions = subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), LocalDate.now(), LocalDate.now().plusMonths(1)));
+        Subscriptions subscriptions1 = subscriptionsRepository.save(createSubscription("Spotify", new BigDecimal("19.95"), LocalDate.now().minusDays(10), LocalDate.now().plusMonths(1)));
+
+        return List.of(subscriptions, subscriptions1);
+    }
+
+    private Subscriptions createSubscription(String name, BigDecimal value, LocalDate startDate, LocalDate nextPaymentDate) {
+        return Subscriptions.builder()
+                .name(name)
+                .description(name + " mensal")
+                .value(value)
+                .startDate(startDate)
+                .nextPaymentDate(nextPaymentDate)
+                .currency("BRL")
+                .notify(true)
+                .active(true)
+                .build();
     }
 }
