@@ -1,5 +1,6 @@
 package dev.guilhermeluan.ongoing.subscriptions;
 
+import dev.guilhermeluan.ongoing.exception.BadRequestException;
 import dev.guilhermeluan.ongoing.subscriptions.entities.BillingCycle;
 import dev.guilhermeluan.ongoing.subscriptions.entities.Subscriptions;
 import org.junit.jupiter.api.Test;
@@ -55,7 +56,7 @@ class SubscriptionsServiceTest {
     }
 
     @Test
-    void calculateNextBillingDate_ShouldThrowIllegalArgument_WhenBillingCycleIsUnknown() {
+    void calculateNextBillingDate_ShouldThrowBadRequestException_WhenBillingCycleIsUnknown() {
 
         var startDate = LocalDate.of(2023, 1, 1);
 
@@ -64,6 +65,6 @@ class SubscriptionsServiceTest {
                 .billingCycle(BillingCycle.builder().id(99L).build())
                 .build();
 
-        assertThrows(IllegalArgumentException.class, () -> service.calculateNextBillingDate(subscription));
+        assertThrows(BadRequestException.class, () -> service.calculateNextBillingDate(subscription));
     }
 }

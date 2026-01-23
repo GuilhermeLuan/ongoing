@@ -84,24 +84,6 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                 .extract().body().asString();
     }
 
-    private static SubscriptionRequestDto createSubscriptionRequestDTO() {
-        return new SubscriptionRequestDto(
-                "Netflix",
-                "Netflix mensal",
-                new BigDecimal("39.95"),
-                LocalDate.now(),
-                LocalDate.now().plusMonths(1),
-                true,
-                true,
-                "BRL",
-                null,
-                1L,
-                1L,
-                1L,
-                1L
-        );
-    }
-
     @Test
     void create_ShouldCreateANewSubscription() {
         SubscriptionRequestDto request = createSubscriptionRequestDTO();
@@ -162,17 +144,72 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
         assertThat(subscriptionUpdated.getValue()).isEqualByComparingTo(new BigDecimal("89.95"));
     }
 
-    @Test
-    void update_ShouldThrowNotFoundException_WhenSubscriptionIsNotFound() {
-        long id = 99L;
+    private static Stream<Arguments> provideInvalidSubscriptionRequests() {
+        LocalDate now = LocalDate.now();
+        LocalDate nextMonth = now.plusMonths(1);
 
-        given().contentType(ContentType.JSON)
-                .body(insertSampleSubscriptions().getFirst())
-                .when().put(API_URL + "/{id}", id)
-                .then()
-                .statusCode(HttpStatus.NOT_FOUND.value())
-                .log().all()
-                .extract().body().asString();
+        return Stream.of(
+                Arguments.of(
+                        "Name is blank",
+                        new SubscriptionRequestDto("", "Description", new BigDecimal("10.00"), now, nextMonth, true, true, "BRL", null, null, null, 1L, null),
+                        "Name is required"
+                ),
+                Arguments.of(
+                        "Name is null",
+                        new SubscriptionRequestDto(null, "Description", new BigDecimal("10.00"), now, nextMonth, true, true, "BRL", null, null, null, 1L, null),
+                        "Name is required"
+                ),
+                Arguments.of(
+                        "Name exceeds 255 characters",
+                        new SubscriptionRequestDto("A".repeat(256), "Description", new BigDecimal("10.00"), now, nextMonth, true, true, "BRL", null, null, null, 1L, null),
+                        "Name must be at most 255 characters"
+                ),
+                Arguments.of(
+                        "Description exceeds 255 characters",
+                        new SubscriptionRequestDto("Valid Name", "D".repeat(256), new BigDecimal("10.00"), now, nextMonth, true, true, "BRL", null, null, null, 1L, null),
+                        "Description must be at most 255 characters"
+                ),
+                Arguments.of(
+                        "Value is null",
+                        new SubscriptionRequestDto("Valid Name", "Description", null, now, nextMonth, true, true, "BRL", null, null, null, 1L, null),
+                        "Value is required"
+                ),
+                Arguments.of(
+                        "Value is negative",
+                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("-10.00"), now, nextMonth, true, true, "BRL", null, null, null, 1L, null),
+                        "Value must be positive"
+                ),
+                Arguments.of(
+                        "Value is zero",
+                        new SubscriptionRequestDto("Valid Name", "Description", BigDecimal.ZERO, now, nextMonth, true, true, "BRL", null, null, null, 1L, null),
+                        "Value must be positive"
+                ),
+                Arguments.of(
+                        "Start date is null",
+                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), null, nextMonth, true, true, "BRL", null, null, null, 1L, null),
+                        "Start date is required"
+                ),
+                Arguments.of(
+                        "Next payment date is null",
+                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), now, null, true, true, "BRL", null, null, null, 1L, null),
+                        "Next payment date is required"
+                ),
+                Arguments.of(
+                        "Currency exceeds 3 characters",
+                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), now, nextMonth, true, true, "BRRL", null, null, null, 1L, null),
+                        "Currency must be at most 3 characters"
+                ),
+                Arguments.of(
+                        "Logo URL exceeds 255 characters",
+                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), now, nextMonth, true, true, "BRL", "L".repeat(256), null, null, 1L, null),
+                        "Logo URL must be at most 255 characters"
+                ),
+                Arguments.of(
+                        "BillingCycleId is null",
+                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), now, nextMonth, true, true, "BRL", null, null, null, null, null),
+                        "BillingCycle is required"
+                )
+        );
     }
 
     @Test
@@ -223,66 +260,21 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
         assertThat(response).contains(expectedErrorMessage);
     }
 
-    private static Stream<Arguments> provideInvalidSubscriptionRequests() {
-        LocalDate now = LocalDate.now();
-        LocalDate nextMonth = now.plusMonths(1);
-
-        return Stream.of(
-                Arguments.of(
-                        "Name is blank",
-                        new SubscriptionRequestDto("", "Description", new BigDecimal("10.00"), now, nextMonth, true, true, "BRL", null, null, null, null, null),
-                        "Name is required"
-                ),
-                Arguments.of(
-                        "Name is null",
-                        new SubscriptionRequestDto(null, "Description", new BigDecimal("10.00"), now, nextMonth, true, true, "BRL", null, null, null, null, null),
-                        "Name is required"
-                ),
-                Arguments.of(
-                        "Name exceeds 255 characters",
-                        new SubscriptionRequestDto("A".repeat(256), "Description", new BigDecimal("10.00"), now, nextMonth, true, true, "BRL", null, null, null, null, null),
-                        "Name must be at most 255 characters"
-                ),
-                Arguments.of(
-                        "Description exceeds 255 characters",
-                        new SubscriptionRequestDto("Valid Name", "D".repeat(256), new BigDecimal("10.00"), now, nextMonth, true, true, "BRL", null, null, null, null, null),
-                        "Description must be at most 255 characters"
-                ),
-                Arguments.of(
-                        "Value is null",
-                        new SubscriptionRequestDto("Valid Name", "Description", null, now, nextMonth, true, true, "BRL", null, null, null, null, null),
-                        "Value is required"
-                ),
-                Arguments.of(
-                        "Value is negative",
-                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("-10.00"), now, nextMonth, true, true, "BRL", null, null, null, null, null),
-                        "Value must be positive"
-                ),
-                Arguments.of(
-                        "Value is zero",
-                        new SubscriptionRequestDto("Valid Name", "Description", BigDecimal.ZERO, now, nextMonth, true, true, "BRL", null, null, null, null, null),
-                        "Value must be positive"
-                ),
-                Arguments.of(
-                        "Start date is null",
-                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), null, nextMonth, true, true, "BRL", null, null, null, null, null),
-                        "Start date is required"
-                ),
-                Arguments.of(
-                        "Next payment date is null",
-                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), now, null, true, true, "BRL", null, null, null, null, null),
-                        "Next payment date is required"
-                ),
-                Arguments.of(
-                        "Currency exceeds 3 characters",
-                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), now, nextMonth, true, true, "BRRL", null, null, null, null, null),
-                        "Currency must be at most 3 characters"
-                ),
-                Arguments.of(
-                        "Logo URL exceeds 255 characters",
-                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), now, nextMonth, true, true, "BRL", "L".repeat(256), null, null, null, null),
-                        "Logo URL must be at most 255 characters"
-                )
+    private static SubscriptionRequestDto createSubscriptionRequestDTO() {
+        return new SubscriptionRequestDto(
+                "Netflix",
+                "Netflix mensal",
+                new BigDecimal("39.95"),
+                LocalDate.now(),
+                LocalDate.now().plusMonths(1),
+                true,
+                true,
+                "BRL",
+                null,
+                1L,
+                1L,
+                1L,
+                1L
         );
     }
 
@@ -318,6 +310,21 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                 .notify(true)
                 .active(true)
                 .build();
+    }
+
+    @Test
+    void update_ShouldThrowNotFoundException_WhenSubscriptionIsNotFound() {
+        long id = 99L;
+
+        var subscription = createSubscriptionRequestDTO();
+
+        given().contentType(ContentType.JSON)
+                .body(subscription)
+                .when().put(API_URL + "/{id}", id)
+                .then()
+                .statusCode(HttpStatus.NOT_FOUND.value())
+                .log().all()
+                .extract().body().asString();
     }
 
 }
