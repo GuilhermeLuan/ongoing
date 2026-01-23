@@ -53,7 +53,7 @@ public class SubscriptionsController {
     @PutMapping("/{id}")
     public ResponseEntity<SubscriptionResponseDto> update(@PathVariable long id, @RequestBody @Valid SubscriptionRequestDto request) {
         Subscriptions subscription = subscriptionsService.findByIdOrThrowNotFoundException(id);
-        
+
         subscriptionsMapper.updateSubscriptionFromDto(request, subscription);
 
         Subscriptions updatedSubscription = subscriptionsService.update(id, subscription);
@@ -68,5 +68,4 @@ public class SubscriptionsController {
         subscriptionsService.deleteById(id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
-
 }

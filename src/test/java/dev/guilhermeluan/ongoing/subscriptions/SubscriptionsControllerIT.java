@@ -2,6 +2,7 @@ package dev.guilhermeluan.ongoing.subscriptions;
 
 import dev.guilhermeluan.ongoing.config.BaseIntegrationTest;
 import dev.guilhermeluan.ongoing.subscriptions.dto.SubscriptionRequestDto;
+import dev.guilhermeluan.ongoing.subscriptions.entities.BillingCycle;
 import dev.guilhermeluan.ongoing.subscriptions.entities.Subscriptions;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.BeforeEach;
@@ -83,13 +84,30 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                 .extract().body().asString();
     }
 
+    private static SubscriptionRequestDto createSubscriptionRequestDTO() {
+        return new SubscriptionRequestDto(
+                "Netflix",
+                "Netflix mensal",
+                new BigDecimal("39.95"),
+                LocalDate.now(),
+                LocalDate.now().plusMonths(1),
+                true,
+                true,
+                "BRL",
+                null,
+                1L,
+                1L,
+                1L,
+                1L
+        );
+    }
+
     @Test
     void create_ShouldCreateANewSubscription() {
-        Subscriptions subscription = createSubscription("Netflix", new BigDecimal("39.95"), LocalDate.now(), LocalDate.now().plusMonths(1));
-
+        SubscriptionRequestDto request = createSubscriptionRequestDTO();
 
         var response = given().contentType(ContentType.JSON)
-                .body(subscription)
+                .body(request)
                 .when().post(API_URL)
                 .then()
                 .statusCode(HttpStatus.CREATED.value())
@@ -98,11 +116,10 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
 
 
         assertThatJson(response).node("id").isNotNull().isNumber();
-        assertThatJson(response).node("name").isEqualTo(subscription.getName());
-        assertThatJson(response).node("description").isEqualTo(subscription.getDescription());
-        assertThatJson(response).node("value").isEqualTo(subscription.getValue());
+        assertThatJson(response).node("name").isEqualTo(request.name());
+        assertThatJson(response).node("description").isEqualTo(request.description());
+        assertThatJson(response).node("value").isEqualTo(request.value());
     }
-
 
     @Test
     void update_ShouldUpdatedSubscriptions() {
@@ -120,10 +137,10 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                 true,
                 "BRL",
                 null,
-                null,
-                null,
-                null,
-                null
+                1L,
+                1L,
+                1L,
+                1L
         );
 
         String response = given().contentType(ContentType.JSON)
@@ -147,7 +164,7 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
 
     @Test
     void update_ShouldThrowNotFoundException_WhenSubscriptionIsNotFound() {
-        Long id = 99L;
+        long id = 99L;
 
         given().contentType(ContentType.JSON)
                 .body(insertSampleSubscriptions().getFirst())
@@ -160,7 +177,7 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
 
     @Test
     void delete_ShouldDeleteSubscription() {
-        Subscriptions subscription = createSubscription("Netflix", new BigDecimal("39.95"), LocalDate.now(), LocalDate.now().plusMonths(1));
+        Subscriptions subscription = createSubscription("Netflix", new BigDecimal("39.95"), LocalDate.now(), LocalDate.now().plusMonths(1), BillingCycle.builder().id(1L).build());
 
         subscriptionsRepository.save(subscription);
 
@@ -173,19 +190,6 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                 .extract().body().asString();
 
         assertThat(subscriptionsRepository.findAll()).isEmpty();
-    }
-
-    @Test
-    void delete_ShouldThrowNotFoundException_WhenSubscriptionIsNotFound() {
-
-        Long id = 99L;
-
-        given().contentType(ContentType.JSON)
-                .when().delete(API_URL + "/{id}", id)
-                .then()
-                .statusCode(HttpStatus.NOT_FOUND.value())
-                .log().all()
-                .extract().body().asString();
     }
 
 
@@ -282,23 +286,38 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
         );
     }
 
+    @Test
+    void delete_ShouldThrowNotFoundException_WhenSubscriptionIsNotFound() {
+
+        long id = 99L;
+
+        given().contentType(ContentType.JSON)
+                .when().delete(API_URL + "/{id}", id)
+                .then()
+                .statusCode(HttpStatus.NOT_FOUND.value())
+                .log().all()
+                .extract().body().asString();
+    }
+
     private List<Subscriptions> insertSampleSubscriptions() {
-        Subscriptions subscriptions = subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), LocalDate.now(), LocalDate.now().plusMonths(1)));
-        Subscriptions subscriptions1 = subscriptionsRepository.save(createSubscription("Spotify", new BigDecimal("19.95"), LocalDate.now().minusDays(10), LocalDate.now().plusMonths(1)));
+        Subscriptions subscriptions = subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), LocalDate.now(), LocalDate.now().plusMonths(1), BillingCycle.builder().id(1L).build()));
+        Subscriptions subscriptions1 = subscriptionsRepository.save(createSubscription("Spotify", new BigDecimal("19.95"), LocalDate.now().minusDays(10), LocalDate.now().plusMonths(1), BillingCycle.builder().id(1L).build()));
 
         return List.of(subscriptions, subscriptions1);
     }
 
-    private Subscriptions createSubscription(String name, BigDecimal value, LocalDate startDate, LocalDate nextPaymentDate) {
+    private Subscriptions createSubscription(String name, BigDecimal value, LocalDate startDate, LocalDate nextPaymentDate, BillingCycle billingCycle) {
         return Subscriptions.builder()
                 .name(name)
                 .description(name + " mensal")
                 .value(value)
                 .startDate(startDate)
                 .nextPaymentDate(nextPaymentDate)
+                .billingCycle(billingCycle)
                 .currency("BRL")
                 .notify(true)
                 .active(true)
                 .build();
     }
+
 }

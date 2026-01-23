@@ -1,7 +1,7 @@
 package dev.guilhermeluan.ongoing.subscriptions;
 
+import dev.guilhermeluan.ongoing.exception.BadRequestException;
 import dev.guilhermeluan.ongoing.exception.NotFoundException;
-import dev.guilhermeluan.ongoing.subscriptions.entities.BillingCycle;
 import dev.guilhermeluan.ongoing.subscriptions.entities.Subscriptions;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -44,20 +44,13 @@ public class SubscriptionsService {
 
     public LocalDate calculateNextBillingDate(Subscriptions subscription) {
         LocalDate lastBillingDate = subscription.getStartDate();
-        BillingCycle billingCycle = subscription.getBillingCycle();
+        Long billingCycleId = subscription.getBillingCycle().getId();
 
-
-        if (billingCycle == null || billingCycle.getId() == null) {
-            throw new IllegalArgumentException("Billing cycle is required");
-        }
-
-
-        if (billingCycle.getId() == 1) {
+        if (billingCycleId == 1L) {
             return lastBillingDate.plusMonths(1);
-        } else if (billingCycle.getId() == 2) {
+        } else if (billingCycleId == 2L) {
             return lastBillingDate.plusYears(1);
         }
-        throw new IllegalArgumentException("Unknown billing cycle: " + subscription.getBillingCycle());
+        throw new BadRequestException(HttpStatus.BAD_REQUEST, "Unknown billing cycle: " + billingCycleId);
     }
-
 }

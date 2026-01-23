@@ -3,12 +3,7 @@ package dev.guilhermeluan.ongoing.subscriptions;
 import dev.guilhermeluan.ongoing.subscriptions.dto.SubscriptionRequestDto;
 import dev.guilhermeluan.ongoing.subscriptions.dto.SubscriptionResponseDto;
 import dev.guilhermeluan.ongoing.subscriptions.entities.Subscriptions;
-import org.mapstruct.BeanMapping;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.NullValuePropertyMappingStrategy;
-import org.mapstruct.MappingConstants;
+import org.mapstruct.*;
 
 import java.util.List;
 
@@ -21,12 +16,24 @@ public interface SubscriptionsMapper {
     List<SubscriptionResponseDto> toSubscriptionResponse(List<Subscriptions> subscriptions);
 
     @Mapping(source = "notifyUser", target = "notify")
+    @Mapping(source = "categoryId", target = "category.id")
+    @Mapping(source = "paymentMethodId", target = "paymentMethod.id")
+    @Mapping(source = "billingCycleId", target = "billingCycle.id")
+    @Mapping(source = "subscriptionTypeId", target = "subscriptionType.id")
     Subscriptions toSubscription(SubscriptionResponseDto dto);
 
     @Mapping(source = "notifyUser", target = "notify")
+    @Mapping(source = "categoryId", target = "category.id")
+    @Mapping(source = "paymentMethodId", target = "paymentMethod.id")
+    @Mapping(source = "billingCycleId", target = "billingCycle.id")
+    @Mapping(source = "subscriptionTypeId", target = "subscriptionType.id")
     Subscriptions toSubscription(SubscriptionRequestDto dto);
 
-    @Mapping(source = "notifyUser", target = "notify") 
+    @Mapping(source = "notifyUser", target = "notify")
+    @Mapping(source = "categoryId", target = "category.id")
+    @Mapping(source = "paymentMethodId", target = "paymentMethod.id")
+    @Mapping(source = "billingCycleId", target = "billingCycle.id")
+    @Mapping(source = "subscriptionTypeId", target = "subscriptionType.id")
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateSubscriptionFromDto(SubscriptionRequestDto dto, @MappingTarget Subscriptions subscription);
 }

@@ -38,6 +38,7 @@ public record SubscriptionRequestDto(
 
         Long categoryId,
         Long paymentMethodId,
+        @NotNull(message = "BillingCycle is required")
         Long billingCycleId,
         Long subscriptionTypeId
 ) {
