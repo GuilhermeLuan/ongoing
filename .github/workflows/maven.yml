@@ -10,9 +10,9 @@ name: Java CI with Maven
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
   workflow_dispatch:
 
 jobs:
@@ -28,6 +28,9 @@ jobs:
         java-version: '25'
         distribution: 'corretto'
         cache: maven
+
+    - name: Unit Tests
+      run: mvn -B test --file pom.xml -U
         
     - name: Integration Tests
       run: mvn -B verify --file pom.xml -U
