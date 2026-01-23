@@ -1,7 +1,10 @@
 server:
-  port: 8080
+  port: 6969
 spring:
   application:
     name: ongoing
   profiles:
     active: ${ACTIVE_PROFILE}
+  threads:
+    virtual:
+      enabled: true
