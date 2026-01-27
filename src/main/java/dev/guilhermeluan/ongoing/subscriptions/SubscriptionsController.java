@@ -22,9 +22,18 @@ public class SubscriptionsController {
     private final SubscriptionsService subscriptionsService;
 
     @GetMapping
-    public ResponseEntity<Page<SubscriptionResponseDto>> findAll(@PageableDefault Pageable pageable) {
+    public ResponseEntity<Page<SubscriptionResponseDto>> findAll(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) Boolean active,
+            @RequestParam(required = false) Long categoryId,
+            @PageableDefault Pageable pageable) {
 
-        Page<SubscriptionResponseDto> response = subscriptionsService.findAll(pageable).map(subscriptionsMapper::toSubscriptionResponse);
+        Page<SubscriptionResponseDto> response = subscriptionsService.findAll(
+                name,
+                active,
+                categoryId,
+                pageable
+        ).map(subscriptionsMapper::toSubscriptionResponse);
 
         return ResponseEntity.ok(response);
     }

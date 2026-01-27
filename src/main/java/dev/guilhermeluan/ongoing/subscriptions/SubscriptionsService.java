@@ -24,7 +24,17 @@ public class SubscriptionsService {
         return subscriptionsRepository.save(subscription);
     }
 
-    public Page<Subscriptions> findAll(Pageable pageable) {
+    public Page<Subscriptions> findAll(
+            String name,
+            Boolean active,
+            Long categoryId,
+            Pageable pageable
+    ) {
+
+        if (name != null || active != null || categoryId != null) {
+            return subscriptionsRepository.findWithFilters(name, active, categoryId, pageable);
+        }
+
         return subscriptionsRepository.findAll(pageable);
     }
 
