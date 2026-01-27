@@ -3,6 +3,7 @@ package dev.guilhermeluan.ongoing.subscriptions;
 import dev.guilhermeluan.ongoing.config.BaseIntegrationTest;
 import dev.guilhermeluan.ongoing.subscriptions.dto.SubscriptionRequestDto;
 import dev.guilhermeluan.ongoing.subscriptions.entities.BillingCycle;
+import dev.guilhermeluan.ongoing.subscriptions.entities.Currency;
 import dev.guilhermeluan.ongoing.subscriptions.entities.Subscriptions;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.BeforeEach;
@@ -103,47 +104,6 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
         assertThatJson(response).node("value").isEqualTo(request.value());
     }
 
-    @Test
-    void update_ShouldUpdatedSubscriptions() {
-        List<Subscriptions> subscriptions = insertSampleSubscriptions();
-
-        Subscriptions subscription = subscriptions.getFirst();
-
-        SubscriptionRequestDto updateRequest = new SubscriptionRequestDto(
-                "Amazon Prime",
-                "Amazon Prime anual",
-                new BigDecimal("89.95"),
-                subscription.getStartDate(),
-                subscription.getNextPaymentDate(),
-                true,
-                true,
-                "BRL",
-                null,
-                1L,
-                1L,
-                1L,
-                1L
-        );
-
-        String response = given().contentType(ContentType.JSON)
-                .body(updateRequest)
-                .when().put(API_URL + "/{id}", subscription.getId())
-                .then()
-                .statusCode(HttpStatus.OK.value())
-                .log().all()
-                .extract().body().asString();
-
-        assertThatJson(response).node("id").isNotNull().isNumber();
-        assertThatJson(response).node("name").isEqualTo("Amazon Prime");
-        assertThatJson(response).node("description").isEqualTo("Amazon Prime anual");
-        assertThatJson(response).node("value").isEqualTo(89.95);
-
-        var subscriptionUpdated = subscriptionsRepository.findById(subscription.getId()).orElseThrow();
-        assertThat(subscriptionUpdated.getName()).isEqualTo("Amazon Prime");
-        assertThat(subscriptionUpdated.getDescription()).isEqualTo("Amazon Prime anual");
-        assertThat(subscriptionUpdated.getValue()).isEqualByComparingTo(new BigDecimal("89.95"));
-    }
-
     private static Stream<Arguments> provideInvalidSubscriptionRequests() {
         LocalDate now = LocalDate.now();
         LocalDate nextMonth = now.plusMonths(1);
@@ -151,64 +111,77 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
         return Stream.of(
                 Arguments.of(
                         "Name is blank",
-                        new SubscriptionRequestDto("", "Description", new BigDecimal("10.00"), now, nextMonth, true, true, "BRL", null, null, null, 1L, null),
+                        new SubscriptionRequestDto("", "Description", new BigDecimal("10.00"), now, nextMonth, true, true, Currency.BRL, null, null, null, 1L, null),
                         "Name is required"
                 ),
                 Arguments.of(
                         "Name is null",
-                        new SubscriptionRequestDto(null, "Description", new BigDecimal("10.00"), now, nextMonth, true, true, "BRL", null, null, null, 1L, null),
+                        new SubscriptionRequestDto(null, "Description", new BigDecimal("10.00"), now, nextMonth, true, true, Currency.BRL, null, null, null, 1L, null),
                         "Name is required"
                 ),
                 Arguments.of(
                         "Name exceeds 255 characters",
-                        new SubscriptionRequestDto("A".repeat(256), "Description", new BigDecimal("10.00"), now, nextMonth, true, true, "BRL", null, null, null, 1L, null),
+                        new SubscriptionRequestDto("A".repeat(256), "Description", new BigDecimal("10.00"), now, nextMonth, true, true, Currency.BRL, null, null, null, 1L, null),
                         "Name must be at most 255 characters"
                 ),
                 Arguments.of(
                         "Description exceeds 255 characters",
-                        new SubscriptionRequestDto("Valid Name", "D".repeat(256), new BigDecimal("10.00"), now, nextMonth, true, true, "BRL", null, null, null, 1L, null),
+                        new SubscriptionRequestDto("Valid Name", "D".repeat(256), new BigDecimal("10.00"), now, nextMonth, true, true, Currency.BRL, null, null, null, 1L, null),
                         "Description must be at most 255 characters"
                 ),
                 Arguments.of(
                         "Value is null",
-                        new SubscriptionRequestDto("Valid Name", "Description", null, now, nextMonth, true, true, "BRL", null, null, null, 1L, null),
+                        new SubscriptionRequestDto("Valid Name", "Description", null, now, nextMonth, true, true, Currency.BRL, null, null, null, 1L, null),
                         "Value is required"
                 ),
                 Arguments.of(
                         "Value is negative",
-                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("-10.00"), now, nextMonth, true, true, "BRL", null, null, null, 1L, null),
+                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("-10.00"), now, nextMonth, true, true, Currency.BRL, null, null, null, 1L, null),
                         "Value must be positive"
                 ),
                 Arguments.of(
                         "Value is zero",
-                        new SubscriptionRequestDto("Valid Name", "Description", BigDecimal.ZERO, now, nextMonth, true, true, "BRL", null, null, null, 1L, null),
+                        new SubscriptionRequestDto("Valid Name", "Description", BigDecimal.ZERO, now, nextMonth, true, true, Currency.BRL, null, null, null, 1L, null),
                         "Value must be positive"
                 ),
                 Arguments.of(
                         "Start date is null",
-                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), null, nextMonth, true, true, "BRL", null, null, null, 1L, null),
+                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), null, nextMonth, true, true, Currency.BRL, null, null, null, 1L, null),
                         "Start date is required"
                 ),
                 Arguments.of(
                         "Next payment date is null",
-                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), now, null, true, true, "BRL", null, null, null, 1L, null),
+                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), now, null, true, true, Currency.BRL, null, null, null, 1L, null),
                         "Next payment date is required"
                 ),
                 Arguments.of(
-                        "Currency exceeds 3 characters",
-                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), now, nextMonth, true, true, "BRRL", null, null, null, 1L, null),
-                        "Currency must be at most 3 characters"
-                ),
-                Arguments.of(
                         "Logo URL exceeds 255 characters",
-                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), now, nextMonth, true, true, "BRL", "L".repeat(256), null, null, 1L, null),
+                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), now, nextMonth, true, true, Currency.BRL, "L".repeat(256), null, null, 1L, null),
                         "Logo URL must be at most 255 characters"
                 ),
                 Arguments.of(
                         "BillingCycleId is null",
-                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), now, nextMonth, true, true, "BRL", null, null, null, null, null),
+                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), now, nextMonth, true, true, Currency.BRL, null, null, null, null, null),
                         "BillingCycle is required"
                 )
+        );
+    }
+
+    private static SubscriptionRequestDto createSubscriptionRequestDTO() {
+        return new SubscriptionRequestDto(
+                "Netflix",
+                "Netflix mensal",
+                new BigDecimal("39.95"),
+                LocalDate.now(),
+                LocalDate.now().plusMonths(1),
+                true,
+                true,
+                Currency.BRL,
+                null,
+                1L,
+                1L,
+                1L,
+                1L
         );
     }
 
@@ -260,22 +233,45 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
         assertThat(response).contains(expectedErrorMessage);
     }
 
-    private static SubscriptionRequestDto createSubscriptionRequestDTO() {
-        return new SubscriptionRequestDto(
-                "Netflix",
-                "Netflix mensal",
-                new BigDecimal("39.95"),
-                LocalDate.now(),
-                LocalDate.now().plusMonths(1),
+    @Test
+    void update_ShouldUpdatedSubscriptions() {
+        List<Subscriptions> subscriptions = insertSampleSubscriptions();
+
+        Subscriptions subscription = subscriptions.getFirst();
+
+        SubscriptionRequestDto updateRequest = new SubscriptionRequestDto(
+                "Amazon Prime",
+                "Amazon Prime anual",
+                new BigDecimal("89.95"),
+                subscription.getStartDate(),
+                subscription.getNextPaymentDate(),
                 true,
                 true,
-                "BRL",
+                Currency.BRL,
                 null,
                 1L,
                 1L,
                 1L,
                 1L
         );
+
+        String response = given().contentType(ContentType.JSON)
+                .body(updateRequest)
+                .when().put(API_URL + "/{id}", subscription.getId())
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .log().all()
+                .extract().body().asString();
+
+        assertThatJson(response).node("id").isNotNull().isNumber();
+        assertThatJson(response).node("name").isEqualTo("Amazon Prime");
+        assertThatJson(response).node("description").isEqualTo("Amazon Prime anual");
+        assertThatJson(response).node("value").isEqualTo(89.95);
+
+        var subscriptionUpdated = subscriptionsRepository.findById(subscription.getId()).orElseThrow();
+        assertThat(subscriptionUpdated.getName()).isEqualTo("Amazon Prime");
+        assertThat(subscriptionUpdated.getDescription()).isEqualTo("Amazon Prime anual");
+        assertThat(subscriptionUpdated.getValue()).isEqualByComparingTo(new BigDecimal("89.95"));
     }
 
     @Test
@@ -306,7 +302,7 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                 .startDate(startDate)
                 .nextPaymentDate(nextPaymentDate)
                 .billingCycle(billingCycle)
-                .currency("BRL")
+                .currency(Currency.BRL)
                 .notify(true)
                 .active(true)
                 .build();
@@ -325,6 +321,62 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                 .statusCode(HttpStatus.NOT_FOUND.value())
                 .log().all()
                 .extract().body().asString();
+    }
+
+    @Test
+    void create_ShouldReturnBadRequest_WhenCurrencyIsInvalid() {
+        String invalidRequest = """
+                {
+                    "name": "Netflix",
+                    "description": "Netflix mensal",
+                    "value": 39.95,
+                    "startDate": "2026-01-01",
+                    "nextPaymentDate": "2026-02-01",
+                    "active": true,
+                    "notifyUser": true,
+                    "currency": "INVALID",
+                    "billingCycleId": 1
+                }
+                """;
+
+        String response = given().contentType(ContentType.JSON)
+                .body(invalidRequest)
+                .when().post(API_URL)
+                .then()
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .log().all()
+                .extract().body().asString();
+
+        assertThat(response).contains("Invalid request body");
+    }
+
+    @Test
+    void update_ShouldReturnBadRequest_WhenCurrencyIsInvalid() {
+        List<Subscriptions> subscriptions = insertSampleSubscriptions();
+
+        String invalidRequest = """
+                {
+                    "name": "Netflix",
+                    "description": "Netflix mensal",
+                    "value": 39.95,
+                    "startDate": "2026-01-01",
+                    "nextPaymentDate": "2026-02-01",
+                    "active": true,
+                    "notifyUser": true,
+                    "currency": "XYZ",
+                    "billingCycleId": 1
+                }
+                """;
+
+        String response = given().contentType(ContentType.JSON)
+                .body(invalidRequest)
+                .when().put(API_URL + "/{id}", subscriptions.getFirst().getId())
+                .then()
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .log().all()
+                .extract().body().asString();
+
+        assertThat(response).contains("Invalid request body");
     }
 
 }

@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -53,6 +54,15 @@ public class GlobalExceptionHandler {
         var error = new DefaultErrorMessage(
                 HttpStatus.BAD_REQUEST.value(),
                 ex.getReason()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<DefaultErrorMessage> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
+        var error = new DefaultErrorMessage(
+                HttpStatus.BAD_REQUEST.value(),
+                "Invalid request body"
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }

@@ -1,5 +1,7 @@
 package dev.guilhermeluan.ongoing.subscriptions.dto;
 
+import dev.guilhermeluan.ongoing.subscriptions.entities.Currency;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
@@ -12,7 +14,7 @@ public record SubscriptionResponseDto(
         LocalDate nextPaymentDate,
         Boolean active,
         Boolean notifyUser,
-        String currency,
+        Currency currency,
         String logoUrl,
         Long categoryId,
         Long paymentMethodId,

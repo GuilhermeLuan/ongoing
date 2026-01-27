@@ -1,5 +1,6 @@
 package dev.guilhermeluan.ongoing.subscriptions.dto;
 
+import dev.guilhermeluan.ongoing.subscriptions.entities.Currency;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -30,8 +31,7 @@ public record SubscriptionRequestDto(
 
         Boolean notifyUser,
 
-        @Size(max = 3, message = "Currency must be at most 3 characters")
-        String currency,
+        Currency currency,
 
         @Size(max = 255, message = "Logo URL must be at most 255 characters")
         String logoUrl,
