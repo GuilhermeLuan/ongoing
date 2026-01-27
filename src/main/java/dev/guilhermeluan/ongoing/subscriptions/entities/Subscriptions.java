@@ -44,8 +44,9 @@ public class Subscriptions {
     private Boolean notify = true;
 
     @Builder.Default
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 3)
-    private String currency = "BRL";
+    private Currency currency = Currency.BRL;
 
     @Column(name = "logo_url", length = 255)
     private String logoUrl;
