@@ -47,16 +47,17 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                 .log().all()
                 .extract().body().asString();
 
-        assertThatJson(response).isArray().hasSize(2);
-        assertThatJson(response).node("[0].id").isNotNull().isNumber();
-        assertThatJson(response).node("[0].name").isEqualTo("Netflix");
-        assertThatJson(response).node("[0].description").isEqualTo("Netflix mensal");
-        assertThatJson(response).node("[0].value").isEqualTo(39.95);
+        assertThatJson(response).node("totalElements").isEqualTo(2);
+        assertThatJson(response).node("content").isArray().hasSize(2);
+        assertThatJson(response).node("content[0].id").isNotNull().isNumber();
+        assertThatJson(response).node("content[0].name").isEqualTo("Netflix");
+        assertThatJson(response).node("content[0].description").isEqualTo("Netflix mensal");
+        assertThatJson(response).node("content[0].value").isEqualTo(39.95);
 
-        assertThatJson(response).node("[1].id").isNotNull().isNumber();
-        assertThatJson(response).node("[1].name").isEqualTo("Spotify");
-        assertThatJson(response).node("[1].description").isEqualTo("Spotify mensal");
-        assertThatJson(response).node("[1].value").isEqualTo(19.95);
+        assertThatJson(response).node("content[1].id").isNotNull().isNumber();
+        assertThatJson(response).node("content[1].name").isEqualTo("Spotify");
+        assertThatJson(response).node("content[1].description").isEqualTo("Spotify mensal");
+        assertThatJson(response).node("content[1].value").isEqualTo(19.95);
     }
 
     @Test
