@@ -3,11 +3,12 @@ package dev.guilhermeluan.ongoing.subscriptions;
 import dev.guilhermeluan.ongoing.exception.BadRequestException;
 import dev.guilhermeluan.ongoing.exception.NotFoundException;
 import dev.guilhermeluan.ongoing.subscriptions.entities.Subscriptions;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.List;
 
 @Service
 public class SubscriptionsService {
@@ -23,8 +24,18 @@ public class SubscriptionsService {
         return subscriptionsRepository.save(subscription);
     }
 
-    public List<Subscriptions> findAll() {
-        return subscriptionsRepository.findAll();
+    public Page<Subscriptions> findAll(
+            String name,
+            Boolean active,
+            Long categoryId,
+            Pageable pageable
+    ) {
+
+        if (name != null || active != null || categoryId != null) {
+            return subscriptionsRepository.findWithFilters(name, active, categoryId, pageable);
+        }
+
+        return subscriptionsRepository.findAll(pageable);
     }
 
     public Subscriptions findByIdOrThrowNotFoundException(Long id) {

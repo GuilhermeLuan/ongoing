@@ -3,6 +3,7 @@ package dev.guilhermeluan.ongoing.subscriptions;
 import dev.guilhermeluan.ongoing.config.BaseIntegrationTest;
 import dev.guilhermeluan.ongoing.subscriptions.dto.SubscriptionRequestDto;
 import dev.guilhermeluan.ongoing.subscriptions.entities.BillingCycle;
+import dev.guilhermeluan.ongoing.subscriptions.entities.Category;
 import dev.guilhermeluan.ongoing.subscriptions.entities.Currency;
 import dev.guilhermeluan.ongoing.subscriptions.entities.Subscriptions;
 import io.restassured.http.ContentType;
@@ -47,16 +48,17 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                 .log().all()
                 .extract().body().asString();
 
-        assertThatJson(response).isArray().hasSize(2);
-        assertThatJson(response).node("[0].id").isNotNull().isNumber();
-        assertThatJson(response).node("[0].name").isEqualTo("Netflix");
-        assertThatJson(response).node("[0].description").isEqualTo("Netflix mensal");
-        assertThatJson(response).node("[0].value").isEqualTo(39.95);
+        assertThatJson(response).node("totalElements").isEqualTo(2);
+        assertThatJson(response).node("content").isArray().hasSize(2);
+        assertThatJson(response).node("content[0].id").isNotNull().isNumber();
+        assertThatJson(response).node("content[0].name").isEqualTo("Netflix");
+        assertThatJson(response).node("content[0].description").isEqualTo("Netflix mensal");
+        assertThatJson(response).node("content[0].value").isEqualTo(39.95);
 
-        assertThatJson(response).node("[1].id").isNotNull().isNumber();
-        assertThatJson(response).node("[1].name").isEqualTo("Spotify");
-        assertThatJson(response).node("[1].description").isEqualTo("Spotify mensal");
-        assertThatJson(response).node("[1].value").isEqualTo(19.95);
+        assertThatJson(response).node("content[1].id").isNotNull().isNumber();
+        assertThatJson(response).node("content[1].name").isEqualTo("Spotify");
+        assertThatJson(response).node("content[1].description").isEqualTo("Spotify mensal");
+        assertThatJson(response).node("content[1].value").isEqualTo(19.95);
     }
 
     @Test
@@ -306,6 +308,114 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                 .notify(true)
                 .active(true)
                 .build();
+    }
+
+    private Subscriptions createSubscription(String name, BigDecimal value, boolean active, Category category) {
+        return Subscriptions.builder()
+                .name(name)
+                .description(name + " mensal")
+                .value(value)
+                .startDate(LocalDate.now())
+                .nextPaymentDate(LocalDate.now().plusMonths(1))
+                .billingCycle(BillingCycle.builder().id(1L).build())
+                .currency(Currency.BRL)
+                .notify(true)
+                .active(active)
+                .category(category)
+                .build();
+    }
+
+    @Test
+    void findAll_ShouldFilterByName_CaseInsensitivePartialMatch() {
+        subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), true, null));
+        subscriptionsRepository.save(createSubscription("Spotify", new BigDecimal("19.95"), true, null));
+        subscriptionsRepository.save(createSubscription("Amazon Prime", new BigDecimal("14.90"), true, null));
+
+        String response = given().contentType(ContentType.JSON)
+                .queryParam("name", "net")
+                .when().get(API_URL)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .extract().body().asString();
+
+        assertThatJson(response).node("totalElements").isEqualTo(1);
+        assertThatJson(response).node("content[0].name").isEqualTo("Netflix");
+    }
+
+    @Test
+    void findAll_ShouldFilterByActiveStatus() {
+        subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), true, null));
+        subscriptionsRepository.save(createSubscription("Spotify", new BigDecimal("19.95"), false, null));
+        subscriptionsRepository.save(createSubscription("Amazon Prime", new BigDecimal("14.90"), true, null));
+
+        String response = given().contentType(ContentType.JSON)
+                .queryParam("active", false)
+                .when().get(API_URL)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .extract().body().asString();
+
+        assertThatJson(response).node("totalElements").isEqualTo(1);
+        assertThatJson(response).node("content[0].name").isEqualTo("Spotify");
+    }
+
+    @Test
+    void findAll_ShouldFilterByCategoryId() {
+        Category videoStreaming = Category.builder().id(1L).build();
+        Category musicStreaming = Category.builder().id(2L).build();
+
+        subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), true, videoStreaming));
+        subscriptionsRepository.save(createSubscription("Spotify", new BigDecimal("19.95"), true, musicStreaming));
+        subscriptionsRepository.save(createSubscription("Disney+", new BigDecimal("27.90"), true, videoStreaming));
+
+        String response = given().contentType(ContentType.JSON)
+                .queryParam("categoryId", 1)
+                .when().get(API_URL)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .extract().body().asString();
+
+        assertThatJson(response).node("totalElements").isEqualTo(2);
+        assertThatJson(response).node("content").isArray().hasSize(2);
+    }
+
+    @Test
+    void findAll_ShouldFilterByCombinedParameters() {
+        Category videoStreaming = Category.builder().id(1L).build();
+        Category musicStreaming = Category.builder().id(2L).build();
+
+        subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), true, videoStreaming));
+        subscriptionsRepository.save(createSubscription("Spotify", new BigDecimal("19.95"), true, musicStreaming));
+        subscriptionsRepository.save(createSubscription("Disney+", new BigDecimal("27.90"), false, videoStreaming));
+        subscriptionsRepository.save(createSubscription("Amazon Prime", new BigDecimal("14.90"), true, videoStreaming));
+
+        String response = given().contentType(ContentType.JSON)
+                .queryParam("name", "net")
+                .queryParam("active", true)
+                .queryParam("categoryId", 1)
+                .when().get(API_URL)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .extract().body().asString();
+
+        assertThatJson(response).node("totalElements").isEqualTo(1);
+        assertThatJson(response).node("content[0].name").isEqualTo("Netflix");
+    }
+
+    @Test
+    void findAll_ShouldReturnAllSubscriptions_WhenNoFiltersProvided() {
+        subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), true, null));
+        subscriptionsRepository.save(createSubscription("Spotify", new BigDecimal("19.95"), false, null));
+        subscriptionsRepository.save(createSubscription("Amazon Prime", new BigDecimal("14.90"), true, null));
+
+        String response = given().contentType(ContentType.JSON)
+                .when().get(API_URL)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .extract().body().asString();
+
+        assertThatJson(response).node("totalElements").isEqualTo(3);
+        assertThatJson(response).node("content").isArray().hasSize(3);
     }
 
     @Test

@@ -5,11 +5,12 @@ import dev.guilhermeluan.ongoing.subscriptions.dto.SubscriptionResponseDto;
 import dev.guilhermeluan.ongoing.subscriptions.entities.Subscriptions;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/subscriptions")
@@ -21,12 +22,20 @@ public class SubscriptionsController {
     private final SubscriptionsService subscriptionsService;
 
     @GetMapping
-    public ResponseEntity<List<SubscriptionResponseDto>> findAll() {
-        List<Subscriptions> subscriptions = subscriptionsService.findAll();
+    public ResponseEntity<Page<SubscriptionResponseDto>> findAll(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) Boolean active,
+            @RequestParam(required = false) Long categoryId,
+            @PageableDefault Pageable pageable) {
 
-        List<SubscriptionResponseDto> response = subscriptionsMapper.toSubscriptionResponse(subscriptions);
+        Page<SubscriptionResponseDto> response = subscriptionsService.findAll(
+                name,
+                active,
+                categoryId,
+                pageable
+        ).map(subscriptionsMapper::toSubscriptionResponse);
 
-        return ResponseEntity.status(HttpStatus.OK.value()).body(response);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
