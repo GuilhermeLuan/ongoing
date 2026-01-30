@@ -24,9 +24,10 @@ public class JwtService {
     public String createToken(User user) {
         return Jwts.builder()
                 .subject(user.getEmail())
-                .claim("role", user.getId())
-                .issuedAt(new java.util.Date())
-                .expiration(new java.util.Date(System.currentTimeMillis() + expirationTime))
+                .claim("userId", user.getId())
+                .claim("role", user.getRole().name())
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + expirationTime))
                 .signWith(getSigningKey())
                 .compact();
     }
@@ -37,6 +38,10 @@ public class JwtService {
 
     public Long extractUserId(String token) {
         return extractClaim(token, claims -> claims.get("userId", Long.class));
+    }
+
+    public String extractRole(String token) {
+        return extractClaim(token, claims -> claims.get("role", String.class));
     }
 
     public Date extractExpiration(String token) {
