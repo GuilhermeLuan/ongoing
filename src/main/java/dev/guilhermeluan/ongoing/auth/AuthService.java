@@ -8,12 +8,12 @@ import dev.guilhermeluan.ongoing.auth.jwt.JwtService;
 import dev.guilhermeluan.ongoing.exception.BadRequestException;
 import dev.guilhermeluan.ongoing.exception.InvalidCredentialException;
 import dev.guilhermeluan.ongoing.user.*;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -26,6 +26,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final RefreshTokenService refreshTokenService;
     @Value("${security.jwt.refresh-expiration}")
     private Long refreshTokenExpiration;
 
@@ -60,18 +61,18 @@ public class AuthService {
 
     @Transactional
     public AuthResponse refreshToken(RefreshRequest refreshRequest) {
-        RefreshToken token = refreshTokenRepository.findByToken(refreshRequest.refreshToken())
-                .orElseThrow(() -> new InvalidCredentialException(HttpStatus.UNAUTHORIZED, "Invalid refresh token"));
+        // Busca o token (lança exceção se não encontrado)
+        RefreshToken token = refreshTokenService.findByTokenOrThrowInvalidCredentialException(refreshRequest.refreshToken());
 
-        User user = token.getUser();
-
-        if (token.getExpiresAt().isBefore(LocalDateTime.now())) {
-            refreshTokenRepository.deleteByUser(user);
+        // Se expirado: deletar em transação separada e lançar exceção
+        if (refreshTokenService.isExpired(token)) {
+            refreshTokenService.deleteTokenInNewTransaction(token.getId());
             throw new InvalidCredentialException(HttpStatus.UNAUTHORIZED, "Invalid refresh token");
         }
 
+        // Token válido: deletar na mesma transação (rollback se falhar depois)
         refreshTokenRepository.delete(token);
-        return generateToken(user);
+        return generateToken(token.getUser());
     }
 
     private AuthResponse generateToken(User user) {
