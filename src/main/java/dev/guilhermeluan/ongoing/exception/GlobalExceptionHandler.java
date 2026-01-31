@@ -58,6 +58,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
+    @ExceptionHandler(InvalidCredentialException.class)
+    public ResponseEntity<DefaultErrorMessage> handleInvalidCredentialException(InvalidCredentialException ex) {
+        var error = new DefaultErrorMessage(
+                HttpStatus.UNAUTHORIZED.value(),
+                ex.getReason()
+        );
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    }
+
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<DefaultErrorMessage> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
         var error = new DefaultErrorMessage(
