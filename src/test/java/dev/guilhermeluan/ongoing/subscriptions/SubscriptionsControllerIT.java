@@ -1,10 +1,17 @@
 package dev.guilhermeluan.ongoing.subscriptions;
 
+import dev.guilhermeluan.ongoing.auth.AuthService;
+import dev.guilhermeluan.ongoing.auth.dto.AuthResponse;
+import dev.guilhermeluan.ongoing.auth.dto.RegisterRequest;
 import dev.guilhermeluan.ongoing.config.BaseIntegrationTest;
 import dev.guilhermeluan.ongoing.subscriptions.dto.SubscriptionRequestDto;
 import dev.guilhermeluan.ongoing.subscriptions.entities.BillingCycle;
+import dev.guilhermeluan.ongoing.subscriptions.entities.Category;
 import dev.guilhermeluan.ongoing.subscriptions.entities.Currency;
 import dev.guilhermeluan.ongoing.subscriptions.entities.Subscriptions;
+import dev.guilhermeluan.ongoing.user.RefreshTokenRepository;
+import dev.guilhermeluan.ongoing.user.User;
+import dev.guilhermeluan.ongoing.user.UserRepository;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,33 +37,57 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
 
     @Autowired
     private SubscriptionsRepository subscriptionsRepository;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private RefreshTokenRepository refreshTokenRepository;
+    @Autowired
+    private AuthService authService;
+
+    private String authToken;
+    private User authenticatedUser;
 
     @BeforeEach
-    void cleanDatabase() {
+    void setUp() {
         subscriptionsRepository.deleteAll();
+        refreshTokenRepository.deleteAll();
+        userRepository.deleteAll();
+
+        RegisterRequest request = new RegisterRequest(
+                "Test User",
+                "test@example.com",
+                "password123"
+        );
+        AuthResponse response = authService.register(request);
+
+        this.authToken = response.accessToken();
+        this.authenticatedUser = userRepository.findByEmail(request.email()).orElseThrow();
     }
+
 
     @Test
     void findAll_ShouldReturnAllSubscriptions() {
         insertSampleSubscriptions();
 
         String response = given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + authToken)
                 .when().get(API_URL)
                 .then()
                 .statusCode(HttpStatus.OK.value())
                 .log().all()
                 .extract().body().asString();
 
-        assertThatJson(response).isArray().hasSize(2);
-        assertThatJson(response).node("[0].id").isNotNull().isNumber();
-        assertThatJson(response).node("[0].name").isEqualTo("Netflix");
-        assertThatJson(response).node("[0].description").isEqualTo("Netflix mensal");
-        assertThatJson(response).node("[0].value").isEqualTo(39.95);
+        assertThatJson(response).node("totalElements").isEqualTo(2);
+        assertThatJson(response).node("content").isArray().hasSize(2);
+        assertThatJson(response).node("content[0].id").isNotNull().isNumber();
+        assertThatJson(response).node("content[0].name").isEqualTo("Netflix");
+        assertThatJson(response).node("content[0].description").isEqualTo("Netflix mensal");
+        assertThatJson(response).node("content[0].value").isEqualTo(39.95);
 
-        assertThatJson(response).node("[1].id").isNotNull().isNumber();
-        assertThatJson(response).node("[1].name").isEqualTo("Spotify");
-        assertThatJson(response).node("[1].description").isEqualTo("Spotify mensal");
-        assertThatJson(response).node("[1].value").isEqualTo(19.95);
+        assertThatJson(response).node("content[1].id").isNotNull().isNumber();
+        assertThatJson(response).node("content[1].name").isEqualTo("Spotify");
+        assertThatJson(response).node("content[1].description").isEqualTo("Spotify mensal");
+        assertThatJson(response).node("content[1].value").isEqualTo(19.95);
     }
 
     @Test
@@ -64,6 +95,7 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
         var subscription = insertSampleSubscriptions().getFirst();
 
         String response = given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + authToken)
                 .when().get(API_URL + "/{id}", subscription.getId())
                 .then()
                 .statusCode(HttpStatus.OK.value())
@@ -78,6 +110,7 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
     @Test
     void findById_ShouldThrowNotFoundException() {
         given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + authToken)
                 .when().get(API_URL + "/{id}", 99)
                 .then()
                 .statusCode(HttpStatus.NOT_FOUND.value())
@@ -90,6 +123,7 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
         SubscriptionRequestDto request = createSubscriptionRequestDTO();
 
         var response = given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + authToken)
                 .body(request)
                 .when().post(API_URL)
                 .then()
@@ -187,12 +221,13 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
 
     @Test
     void delete_ShouldDeleteSubscription() {
-        Subscriptions subscription = createSubscription("Netflix", new BigDecimal("39.95"), LocalDate.now(), LocalDate.now().plusMonths(1), BillingCycle.builder().id(1L).build());
+        Subscriptions subscription = createSubscription("Netflix", new BigDecimal("39.95"), LocalDate.now(), LocalDate.now().plusMonths(1), BillingCycle.builder().id(1L).build(), authenticatedUser);
 
         subscriptionsRepository.save(subscription);
 
 
         given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + authToken)
                 .when().delete(API_URL + "/{id}", subscription.getId())
                 .then()
                 .statusCode(HttpStatus.NO_CONTENT.value())
@@ -207,6 +242,7 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
     @MethodSource("provideInvalidSubscriptionRequests")
     void create_ShouldReturnBadRequest_WhenValidationFails(String testName, SubscriptionRequestDto request, String expectedErrorMessage) {
         String response = given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + authToken)
                 .body(request)
                 .when().post(API_URL)
                 .then()
@@ -223,6 +259,7 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
         List<Subscriptions> subscriptions = insertSampleSubscriptions();
 
         String response = given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + authToken)
                 .body(request)
                 .when().put(API_URL + "/{id}", subscriptions.getFirst().getId())
                 .then()
@@ -256,6 +293,7 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
         );
 
         String response = given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + authToken)
                 .body(updateRequest)
                 .when().put(API_URL + "/{id}", subscription.getId())
                 .then()
@@ -280,6 +318,7 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
         long id = 99L;
 
         given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + authToken)
                 .when().delete(API_URL + "/{id}", id)
                 .then()
                 .statusCode(HttpStatus.NOT_FOUND.value())
@@ -288,13 +327,13 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
     }
 
     private List<Subscriptions> insertSampleSubscriptions() {
-        Subscriptions subscriptions = subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), LocalDate.now(), LocalDate.now().plusMonths(1), BillingCycle.builder().id(1L).build()));
-        Subscriptions subscriptions1 = subscriptionsRepository.save(createSubscription("Spotify", new BigDecimal("19.95"), LocalDate.now().minusDays(10), LocalDate.now().plusMonths(1), BillingCycle.builder().id(1L).build()));
+        Subscriptions subscriptions = subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), LocalDate.now(), LocalDate.now().plusMonths(1), BillingCycle.builder().id(1L).build(), authenticatedUser));
+        Subscriptions subscriptions1 = subscriptionsRepository.save(createSubscription("Spotify", new BigDecimal("19.95"), LocalDate.now().minusDays(10), LocalDate.now().plusMonths(1), BillingCycle.builder().id(1L).build(), authenticatedUser));
 
         return List.of(subscriptions, subscriptions1);
     }
 
-    private Subscriptions createSubscription(String name, BigDecimal value, LocalDate startDate, LocalDate nextPaymentDate, BillingCycle billingCycle) {
+    private Subscriptions createSubscription(String name, BigDecimal value, LocalDate startDate, LocalDate nextPaymentDate, BillingCycle billingCycle, User user) {
         return Subscriptions.builder()
                 .name(name)
                 .description(name + " mensal")
@@ -305,7 +344,122 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                 .currency(Currency.BRL)
                 .notify(true)
                 .active(true)
+                .user(user)
                 .build();
+    }
+
+    private Subscriptions createSubscription(String name, BigDecimal value, boolean active, Category category) {
+        return Subscriptions.builder()
+                .name(name)
+                .description(name + " mensal")
+                .value(value)
+                .startDate(LocalDate.now())
+                .nextPaymentDate(LocalDate.now().plusMonths(1))
+                .billingCycle(BillingCycle.builder().id(1L).build())
+                .currency(Currency.BRL)
+                .notify(true)
+                .active(active)
+                .category(category)
+                .user(authenticatedUser)
+                .build();
+    }
+
+    @Test
+    void findAll_ShouldFilterByName_CaseInsensitivePartialMatch() {
+        subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), true, null));
+        subscriptionsRepository.save(createSubscription("Spotify", new BigDecimal("19.95"), true, null));
+        subscriptionsRepository.save(createSubscription("Amazon Prime", new BigDecimal("14.90"), true, null));
+
+        String response = given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + authToken)
+                .queryParam("name", "net")
+                .when().get(API_URL)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .extract().body().asString();
+
+        assertThatJson(response).node("totalElements").isEqualTo(1);
+        assertThatJson(response).node("content[0].name").isEqualTo("Netflix");
+    }
+
+    @Test
+    void findAll_ShouldFilterByActiveStatus() {
+        subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), true, null));
+        subscriptionsRepository.save(createSubscription("Spotify", new BigDecimal("19.95"), false, null));
+        subscriptionsRepository.save(createSubscription("Amazon Prime", new BigDecimal("14.90"), true, null));
+
+        String response = given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + authToken)
+                .queryParam("active", false)
+                .when().get(API_URL)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .extract().body().asString();
+
+        assertThatJson(response).node("totalElements").isEqualTo(1);
+        assertThatJson(response).node("content[0].name").isEqualTo("Spotify");
+    }
+
+    @Test
+    void findAll_ShouldFilterByCategoryId() {
+        Category videoStreaming = Category.builder().id(1L).build();
+        Category musicStreaming = Category.builder().id(2L).build();
+
+        subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), true, videoStreaming));
+        subscriptionsRepository.save(createSubscription("Spotify", new BigDecimal("19.95"), true, musicStreaming));
+        subscriptionsRepository.save(createSubscription("Disney+", new BigDecimal("27.90"), true, videoStreaming));
+
+        String response = given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + authToken)
+                .queryParam("categoryId", 1)
+                .when().get(API_URL)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .extract().body().asString();
+
+        assertThatJson(response).node("totalElements").isEqualTo(2);
+        assertThatJson(response).node("content").isArray().hasSize(2);
+    }
+
+    @Test
+    void findAll_ShouldFilterByCombinedParameters() {
+        Category videoStreaming = Category.builder().id(1L).build();
+        Category musicStreaming = Category.builder().id(2L).build();
+
+        subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), true, videoStreaming));
+        subscriptionsRepository.save(createSubscription("Spotify", new BigDecimal("19.95"), true, musicStreaming));
+        subscriptionsRepository.save(createSubscription("Disney+", new BigDecimal("27.90"), false, videoStreaming));
+        subscriptionsRepository.save(createSubscription("Amazon Prime", new BigDecimal("14.90"), true, videoStreaming));
+
+        String response = given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + authToken)
+                .queryParam("name", "net")
+                .queryParam("active", true)
+                .queryParam("categoryId", 1)
+                .when().get(API_URL)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .extract().body().asString();
+
+        assertThatJson(response).node("totalElements").isEqualTo(1);
+        assertThatJson(response).node("content[0].name").isEqualTo("Netflix");
+    }
+
+    @Test
+    void findAll_ShouldReturnAllSubscriptions_WhenNoFiltersProvided() {
+        subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), true, null));
+        subscriptionsRepository.save(createSubscription("Spotify", new BigDecimal("19.95"), false, null));
+        subscriptionsRepository.save(createSubscription("Amazon Prime", new BigDecimal("14.90"), true, null));
+
+        String response = given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + authToken)
+                .when().get(API_URL)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .extract().body().asString();
+
+        assertThatJson(response).node("totalElements").isEqualTo(3);
+        assertThatJson(response).node("content").isArray().hasSize(3);
     }
 
     @Test
@@ -315,6 +469,7 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
         var subscription = createSubscriptionRequestDTO();
 
         given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + authToken)
                 .body(subscription)
                 .when().put(API_URL + "/{id}", id)
                 .then()
@@ -340,6 +495,7 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                 """;
 
         String response = given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + authToken)
                 .body(invalidRequest)
                 .when().post(API_URL)
                 .then()
@@ -369,6 +525,7 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                 """;
 
         String response = given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + authToken)
                 .body(invalidRequest)
                 .when().put(API_URL + "/{id}", subscriptions.getFirst().getId())
                 .then()
@@ -377,6 +534,169 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                 .extract().body().asString();
 
         assertThat(response).contains("Invalid request body");
+    }
+
+    @Test
+    void findAll_ShouldReturn403_WhenNoTokenProvided() {
+        given()
+                .contentType(ContentType.JSON)
+                .when().get(API_URL)
+                .then()
+                .statusCode(HttpStatus.FORBIDDEN.value());
+    }
+
+    @Test
+    void findById_ShouldReturn403_WhenNoTokenProvided() {
+        given()
+                .contentType(ContentType.JSON)
+                .when().get(API_URL + "/{id}", 1)
+                .then()
+                .statusCode(HttpStatus.FORBIDDEN.value());
+    }
+
+    @Test
+    void create_ShouldReturn403_WhenNoTokenProvided() {
+        given()
+                .contentType(ContentType.JSON)
+                .body(createSubscriptionRequestDTO())
+                .when().post(API_URL)
+                .then()
+                .statusCode(HttpStatus.FORBIDDEN.value());
+    }
+
+    @Test
+    void update_ShouldReturn403_WhenNoTokenProvided() {
+        given()
+                .contentType(ContentType.JSON)
+                .body(createSubscriptionRequestDTO())
+                .when().put(API_URL + "/{id}", 1)
+                .then()
+                .statusCode(HttpStatus.FORBIDDEN.value());
+    }
+
+    @Test
+    void delete_ShouldReturn403_WhenNoTokenProvided() {
+        given()
+                .contentType(ContentType.JSON)
+                .when().delete(API_URL + "/{id}", 1)
+                .then()
+                .statusCode(HttpStatus.FORBIDDEN.value());
+    }
+
+
+    @Test
+    void findAll_ShouldNotReturnSubscriptionsFromOtherUsers() {
+        subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), true, null));
+
+        authService.register(new RegisterRequest("Other User", "other@example.com", "password123"));
+        User otherUser = userRepository.findByEmail("other@example.com").orElseThrow();
+
+        Subscriptions otherSubscription = subscriptionsRepository.save(
+                Subscriptions.builder()
+                        .name("Spotify")
+                        .description("Spotify mensal")
+                        .value(new BigDecimal("19.95"))
+                        .startDate(LocalDate.now())
+                        .nextPaymentDate(LocalDate.now().plusMonths(1))
+                        .billingCycle(BillingCycle.builder().id(1L).build())
+                        .currency(Currency.BRL)
+                        .active(true)
+                        .notify(true)
+                        .user(otherUser)
+                        .build()
+        );
+
+        String response = given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + authToken)
+                .when().get(API_URL)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .extract().body().asString();
+
+        assertThatJson(response).node("totalElements").isEqualTo(1);
+        assertThatJson(response).node("content[0].name").isEqualTo("Netflix");
+    }
+
+    @Test
+    void findById_ShouldReturn404_WhenSubscriptionBelongsToOtherUser() {
+        authService.register(new RegisterRequest("Other", "other@example.com", "password123"));
+        User otherUser = userRepository.findByEmail("other@example.com").orElseThrow();
+
+        Subscriptions otherSubscription = subscriptionsRepository.save(
+                Subscriptions.builder()
+                        .name("Spotify")
+                        .value(new BigDecimal("19.95"))
+                        .startDate(LocalDate.now())
+                        .nextPaymentDate(LocalDate.now().plusMonths(1))
+                        .billingCycle(BillingCycle.builder().id(1L).build())
+                        .currency(Currency.BRL)
+                        .active(true)
+                        .user(otherUser)
+                        .build()
+        );
+
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + authToken)
+                .when().get(API_URL + "/{id}", otherSubscription.getId())
+                .then()
+                .statusCode(HttpStatus.NOT_FOUND.value());
+    }
+
+    @Test
+    void delete_ShouldReturn404_WhenSubscriptionBelongsToOtherUser() {
+        authService.register(new RegisterRequest("Other", "other@example.com", "password123"));
+        User otherUser = userRepository.findByEmail("other@example.com").orElseThrow();
+
+        Subscriptions otherSubscription = subscriptionsRepository.save(
+                Subscriptions.builder()
+                        .name("Spotify")
+                        .value(new BigDecimal("19.95"))
+                        .startDate(LocalDate.now())
+                        .nextPaymentDate(LocalDate.now().plusMonths(1))
+                        .billingCycle(BillingCycle.builder().id(1L).build())
+                        .currency(Currency.BRL)
+                        .active(true)
+                        .user(otherUser)
+                        .build()
+        );
+
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + authToken)
+                .when().delete(API_URL + "/{id}", otherSubscription.getId())
+                .then()
+                .statusCode(HttpStatus.NOT_FOUND.value());
+
+        assertThat(subscriptionsRepository.findById(otherSubscription.getId())).isPresent();
+    }
+
+    @Test
+    void update_ShouldReturn404_WhenSubscriptionBelongsToOtherUser() {
+        authService.register(new RegisterRequest("Other", "other@example.com", "password123"));
+        User otherUser = userRepository.findByEmail("other@example.com").orElseThrow();
+
+        Subscriptions otherSubscription = subscriptionsRepository.save(
+                Subscriptions.builder()
+                        .name("Spotify")
+                        .value(new BigDecimal("19.95"))
+                        .startDate(LocalDate.now())
+                        .nextPaymentDate(LocalDate.now().plusMonths(1))
+                        .billingCycle(BillingCycle.builder().id(1L).build())
+                        .currency(Currency.BRL)
+                        .active(true)
+                        .user(otherUser)
+                        .build()
+        );
+
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + authToken)
+                .body(createSubscriptionRequestDTO())
+                .when().put(API_URL + "/{id}", otherSubscription.getId())
+                .then()
+                .statusCode(HttpStatus.NOT_FOUND.value());
     }
 
 }

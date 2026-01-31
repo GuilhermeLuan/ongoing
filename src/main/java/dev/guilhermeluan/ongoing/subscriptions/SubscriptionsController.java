@@ -1,15 +1,18 @@
 package dev.guilhermeluan.ongoing.subscriptions;
 
+import dev.guilhermeluan.ongoing.auth.jwt.UserPrincipal;
 import dev.guilhermeluan.ongoing.subscriptions.dto.SubscriptionRequestDto;
 import dev.guilhermeluan.ongoing.subscriptions.dto.SubscriptionResponseDto;
 import dev.guilhermeluan.ongoing.subscriptions.entities.Subscriptions;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/subscriptions")
@@ -21,17 +24,31 @@ public class SubscriptionsController {
     private final SubscriptionsService subscriptionsService;
 
     @GetMapping
-    public ResponseEntity<List<SubscriptionResponseDto>> findAll() {
-        List<Subscriptions> subscriptions = subscriptionsService.findAll();
+    public ResponseEntity<Page<SubscriptionResponseDto>> findAll(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) Boolean active,
+            @RequestParam(required = false) Long categoryId,
+            Authentication auth,
+            @PageableDefault Pageable pageable) {
 
-        List<SubscriptionResponseDto> response = subscriptionsMapper.toSubscriptionResponse(subscriptions);
+        Long userId = ((UserPrincipal) auth.getPrincipal()).id();
 
-        return ResponseEntity.status(HttpStatus.OK.value()).body(response);
+        Page<SubscriptionResponseDto> response = subscriptionsService.findAll(
+                name,
+                active,
+                categoryId,
+                pageable,
+                userId
+        ).map(subscriptionsMapper::toSubscriptionResponse);
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
-    ResponseEntity<SubscriptionResponseDto> findById(@PathVariable long id) {
-        Subscriptions subscription = subscriptionsService.findByIdOrThrowNotFoundException(id);
+    ResponseEntity<SubscriptionResponseDto> findById(@PathVariable long id, Authentication auth) {
+
+        Long userId = ((UserPrincipal) auth.getPrincipal()).id();
+        Subscriptions subscription = subscriptionsService.findByIdOrThrowNotFoundException(id, userId);
 
         SubscriptionResponseDto response = subscriptionsMapper.toSubscriptionResponse(subscription);
 
@@ -39,11 +56,13 @@ public class SubscriptionsController {
     }
 
     @PostMapping
-    public ResponseEntity<SubscriptionResponseDto> create(@RequestBody @Valid SubscriptionRequestDto request) {
+    public ResponseEntity<SubscriptionResponseDto> create(@RequestBody @Valid SubscriptionRequestDto request, Authentication auth) {
+
+        Long userId = ((UserPrincipal) auth.getPrincipal()).id();
 
         Subscriptions subscriptionToSave = subscriptionsMapper.toSubscription(request);
 
-        Subscriptions createdSubscription = subscriptionsService.save(subscriptionToSave);
+        Subscriptions createdSubscription = subscriptionsService.save(subscriptionToSave, userId);
 
         SubscriptionResponseDto response = subscriptionsMapper.toSubscriptionResponse(createdSubscription);
 
@@ -51,12 +70,14 @@ public class SubscriptionsController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<SubscriptionResponseDto> update(@PathVariable long id, @RequestBody @Valid SubscriptionRequestDto request) {
-        Subscriptions subscription = subscriptionsService.findByIdOrThrowNotFoundException(id);
+    public ResponseEntity<SubscriptionResponseDto> update(@PathVariable long id, @RequestBody @Valid SubscriptionRequestDto request, Authentication auth) {
+
+        Long userId = ((UserPrincipal) auth.getPrincipal()).id();
+        Subscriptions subscription = subscriptionsService.findByIdOrThrowNotFoundException(id, userId);
 
         subscriptionsMapper.updateSubscriptionFromDto(request, subscription);
 
-        Subscriptions updatedSubscription = subscriptionsService.update(id, subscription);
+        Subscriptions updatedSubscription = subscriptionsService.update(id, subscription, userId);
 
         SubscriptionResponseDto response = subscriptionsMapper.toSubscriptionResponse(updatedSubscription);
 
@@ -64,8 +85,10 @@ public class SubscriptionsController {
     }
 
     @DeleteMapping({"/{id}"})
-    public ResponseEntity<Void> delete(@PathVariable long id) {
-        subscriptionsService.deleteById(id);
+    public ResponseEntity<Void> delete(@PathVariable long id, Authentication auth) {
+
+        Long userId = ((UserPrincipal) auth.getPrincipal()).id();
+        subscriptionsService.deleteById(id, userId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }
