@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Optional;
+
 public interface SubscriptionsRepository extends JpaRepository<Subscriptions, Long> {
 
     @Query("""
@@ -14,10 +16,16 @@ public interface SubscriptionsRepository extends JpaRepository<Subscriptions, Lo
             WHERE (:name IS NULL OR s.name ILIKE CONCAT('%', CAST(:name AS string), '%'))
             AND (:active IS NULL OR s.active = :active)
             AND (:categoryId IS NULL OR s.category.id = :categoryId)
+            AND (s.user.id = :userId)
             """)
     Page<Subscriptions> findWithFilters(
             @Param("name") String name,
             @Param("active") Boolean active,
             @Param("categoryId") Long categoryId,
+            @Param("userId") Long userId,
             Pageable pageable);
+
+    Page<Subscriptions> findAllByUserId(Long userId, Pageable pageable);
+
+    Optional<Subscriptions> findByIdAndUserId(Long id, Long userId);
 }
