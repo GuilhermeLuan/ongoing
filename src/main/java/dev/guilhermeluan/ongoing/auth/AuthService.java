@@ -8,6 +8,7 @@ import dev.guilhermeluan.ongoing.auth.jwt.JwtService;
 import dev.guilhermeluan.ongoing.exception.BadRequestException;
 import dev.guilhermeluan.ongoing.exception.InvalidCredentialException;
 import dev.guilhermeluan.ongoing.user.*;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -28,6 +29,7 @@ public class AuthService {
     @Value("${security.jwt.refresh-expiration}")
     private Long refreshTokenExpiration;
 
+    @Transactional
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.email())) {
             throw new BadRequestException(HttpStatus.BAD_REQUEST, "Email already exists");
@@ -45,6 +47,7 @@ public class AuthService {
         return generateToken(user);
     }
 
+    @Transactional
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.email()).orElseThrow(() ->
                 new InvalidCredentialException(HttpStatus.UNAUTHORIZED, "Invalid email or password"));
@@ -55,6 +58,7 @@ public class AuthService {
         return generateToken(user);
     }
 
+    @Transactional
     public AuthResponse refreshToken(RefreshRequest refreshRequest) {
         RefreshToken token = refreshTokenRepository.findByToken(refreshRequest.refreshToken())
                 .orElseThrow(() -> new InvalidCredentialException(HttpStatus.UNAUTHORIZED, "Invalid refresh token"));
