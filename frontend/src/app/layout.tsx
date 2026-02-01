@@ -1,0 +1,60 @@
+import type { Metadata } from "next";
+import { Plus_Jakarta_Sans, Inter, JetBrains_Mono } from "next/font/google";
+import "./globals.css";
+
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-plus-jakarta",
+  display: "swap",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains",
+  display: "swap",
+});
+
+export const metadata: Metadata = {
+  title: "Ongoing - Gerencie suas assinaturas de forma inteligente",
+  description:
+    "Controle todas as suas assinaturas em um só lugar. Visualize gastos, receba alertas de renovação e economize dinheiro com o Ongoing.",
+  keywords: [
+    "assinaturas",
+    "subscription tracker",
+    "gerenciador de assinaturas",
+    "controle financeiro",
+    "streaming",
+    "Netflix",
+    "Spotify",
+  ],
+  authors: [{ name: "Ongoing" }],
+  openGraph: {
+    title: "Ongoing - Gerencie suas assinaturas de forma inteligente",
+    description:
+      "Controle todas as suas assinaturas em um só lugar. Visualize gastos, receba alertas de renovação e economize dinheiro.",
+    type: "website",
+    locale: "pt_BR",
+  },
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="pt-BR" className="scroll-smooth">
+      <body
+        className={`${plusJakarta.variable} ${inter.variable} ${jetbrainsMono.variable} font-body antialiased`}
+      >
+        {children}
+      </body>
+    </html>
+  );
+}
