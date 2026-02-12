@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Service
 public class SubscriptionsService {
@@ -61,6 +62,10 @@ public class SubscriptionsService {
         Subscriptions existingSubscription = findByIdOrThrowNotFoundException(id, userId);
         subscriptionToUpdate.setId(existingSubscription.getId());
         return subscriptionsRepository.save(subscriptionToUpdate);
+    }
+
+    public List<Subscriptions> findActiveByUserId(Long userId) {
+        return subscriptionsRepository.findActiveByUserId(userId);
     }
 
     public LocalDate calculateNextBillingDate(Subscriptions subscription) {
