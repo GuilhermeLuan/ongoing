@@ -423,6 +423,19 @@ anotado com:
 Ou seja: na primeira chamada, ele bate na API e guarda o resultado; nas proximas, ele volta do Redis.
 Isso e exatamente o tipo de otimizacao "pequena" que vira grande quando voce tem varios usuarios acessando o dashboard.
 
+---
+
+## Preparando o terreno do Dashboard: DTOs (Phase 3)
+
+Antes de escrever a logica do dashboard, a gente define o contrato de resposta.
+Esses records vivem em:
+
+- `backend/src/main/java/dev/guilhermeluan/ongoing/dashboard/dto/CategorySpending.java`
+- `backend/src/main/java/dev/guilhermeluan/ongoing/dashboard/dto/DashboardResponse.java`
+
+Detalhe importante: como `Category` no seu modelo e uma entidade (tem `id` e `name`), o dashboard manda os dois.
+O frontend pode usar `categoryId` como chave estavel e `categoryName` como label.
+
 A arquitetura atual suporta tudo isso sem grandes refatorações. Esse é o sinal de um bom design.
 
 ---
