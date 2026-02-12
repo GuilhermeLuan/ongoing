@@ -8,7 +8,6 @@ spring:
       ddl-auto: validate
   flyway:
     enabled: true
-
 security:
   jwt:
     secret: mKajIumMVBXacG48DHnLz6EH0f0hgp5vTgIlrQsI1op8tokendeteste

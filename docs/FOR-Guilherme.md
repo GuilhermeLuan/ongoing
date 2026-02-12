@@ -385,6 +385,44 @@ Se quiser evoluir o projeto:
 5. **Multi-tenancy**: Suporte a múltiplos usuários
 6. **Cache**: Redis para queries frequentes
 
+---
+
+## O Que Mudou Agora: Modulo de Cambio (Phase 2 do Dashboard)
+
+Pra montar um dashboard decente, a gente precisa comparar coisas na mesma moeda.
+O problema e que suas assinaturas podem estar em BRL, USD e EUR. Entao a "Phase 2" do plano cria um modulo que:
+
+- Busca taxas de cambio em uma API externa
+- Converte valores para BRL
+- Usa cache (Redis) pra nao ficar batendo na API toda hora
+
+### O Jeito Moderno do Spring Boot 4: HttpExchange
+
+Antes, o normal era usar `RestTemplate` (antigo) ou escrever muito codigo em cima de `WebClient`.
+No Spring moderno, da pra declarar um cliente HTTP como uma interface e anotar com `@HttpExchange`.
+O Spring cria um proxy pra voce e voce chama como se fosse um metodo Java comum.
+
+No projeto, isso ficou assim:
+
+- `backend/src/main/java/dev/guilhermeluan/ongoing/exchange/ExchangeRateClient.java`
+- `backend/src/main/java/dev/guilhermeluan/ongoing/exchange/ExchangeRateClientConfig.java`
+
+E a regra do jogo e simples:
+
+- A API externa retorna as taxas com base em uma moeda (por padrao, USD)
+- A gente deriva `USD->BRL` e `EUR->BRL`
+- O resto do sistema so enxerga "valor em BRL" e segue a vida
+
+### Caching: o truque que salva o limite de requests
+
+O metodo `getRatesToBrl()` em `backend/src/main/java/dev/guilhermeluan/ongoing/exchange/ExchangeRateService.java` esta
+anotado com:
+
+`@Cacheable(value = "exchange-rates", key = "'BRL'")`
+
+Ou seja: na primeira chamada, ele bate na API e guarda o resultado; nas proximas, ele volta do Redis.
+Isso e exatamente o tipo de otimizacao "pequena" que vira grande quando voce tem varios usuarios acessando o dashboard.
+
 A arquitetura atual suporta tudo isso sem grandes refatorações. Esse é o sinal de um bom design.
 
 ---

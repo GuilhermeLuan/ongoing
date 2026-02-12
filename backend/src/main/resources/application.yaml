@@ -8,9 +8,19 @@ spring:
   threads:
     virtual:
       enabled: true
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+  cache:
+    type: redis
 
 security:
   jwt:
     secret: ${JWT_SECRET}
     expiration: ${JWT_EXPIRATION}
     refresh-expiration: ${JWT_REFRESH_EXPIRATION}
+
+exchange:
+  api:
+    url: ${EXCHANGE_API_URL:https://api.exchangerate-api.com/v4/latest/USD}
