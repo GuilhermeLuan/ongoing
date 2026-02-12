@@ -60,8 +60,8 @@ public class Subscriptions {
     @JoinColumn(name = "id_payment_method")
     private PaymentMethod paymentMethod;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_billing_cycle")
+    @Enumerated(EnumType.STRING)
+    @Column(name = "billing_cycle", nullable = false, length = 20)
     private BillingCycle billingCycle;
 
     @ManyToOne(fetch = FetchType.LAZY)

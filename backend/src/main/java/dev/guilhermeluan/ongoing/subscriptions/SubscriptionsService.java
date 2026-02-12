@@ -2,6 +2,7 @@ package dev.guilhermeluan.ongoing.subscriptions;
 
 import dev.guilhermeluan.ongoing.exception.BadRequestException;
 import dev.guilhermeluan.ongoing.exception.NotFoundException;
+import dev.guilhermeluan.ongoing.subscriptions.entities.BillingCycle;
 import dev.guilhermeluan.ongoing.subscriptions.entities.Subscriptions;
 import dev.guilhermeluan.ongoing.user.User;
 import dev.guilhermeluan.ongoing.user.UserRepository;
@@ -64,13 +65,19 @@ public class SubscriptionsService {
 
     public LocalDate calculateNextBillingDate(Subscriptions subscription) {
         LocalDate lastBillingDate = subscription.getStartDate();
-        Long billingCycleId = subscription.getBillingCycle().getId();
+        BillingCycle billingCycle = subscription.getBillingCycle();
 
-        if (billingCycleId == 1L) {
-            return lastBillingDate.plusMonths(1);
-        } else if (billingCycleId == 2L) {
-            return lastBillingDate.plusYears(1);
+        if (billingCycle == null) {
+            throw new BadRequestException(HttpStatus.BAD_REQUEST, "Billing cycle is required");
         }
-        throw new BadRequestException(HttpStatus.BAD_REQUEST, "Unknown billing cycle: " + billingCycleId);
+
+        return switch (billingCycle) {
+            case MONTHLY -> lastBillingDate.plusMonths(1);
+            case QUARTERLY -> lastBillingDate.plusMonths(3);
+            case SEMI_ANNUAL -> lastBillingDate.plusMonths(6);
+            case YEARLY -> lastBillingDate.plusYears(1);
+            case WEEKLY -> lastBillingDate.plusWeeks(1);
+            case BIWEEKLY -> lastBillingDate.plusWeeks(2);
+        };
     }
 }

@@ -1,5 +1,6 @@
 package dev.guilhermeluan.ongoing.subscriptions.dto;
 
+import dev.guilhermeluan.ongoing.subscriptions.entities.BillingCycle;
 import dev.guilhermeluan.ongoing.subscriptions.entities.Currency;
 
 import java.math.BigDecimal;
@@ -18,7 +19,7 @@ public record SubscriptionResponseDto(
         String logoUrl,
         Long categoryId,
         Long paymentMethodId,
-        Long billingCycleId,
+        BillingCycle billingCycle,
         Long subscriptionTypeId
 ) {
 }

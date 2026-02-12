@@ -145,56 +145,56 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
         return Stream.of(
                 Arguments.of(
                         "Name is blank",
-                        new SubscriptionRequestDto("", "Description", new BigDecimal("10.00"), now, nextMonth, true, true, Currency.BRL, null, null, null, 1L, null),
+                        new SubscriptionRequestDto("", "Description", new BigDecimal("10.00"), now, nextMonth, true, true, Currency.BRL, null, null, null, BillingCycle.MONTHLY, null),
                         "Name is required"
                 ),
                 Arguments.of(
                         "Name is null",
-                        new SubscriptionRequestDto(null, "Description", new BigDecimal("10.00"), now, nextMonth, true, true, Currency.BRL, null, null, null, 1L, null),
+                        new SubscriptionRequestDto(null, "Description", new BigDecimal("10.00"), now, nextMonth, true, true, Currency.BRL, null, null, null, BillingCycle.MONTHLY, null),
                         "Name is required"
                 ),
                 Arguments.of(
                         "Name exceeds 255 characters",
-                        new SubscriptionRequestDto("A".repeat(256), "Description", new BigDecimal("10.00"), now, nextMonth, true, true, Currency.BRL, null, null, null, 1L, null),
+                        new SubscriptionRequestDto("A".repeat(256), "Description", new BigDecimal("10.00"), now, nextMonth, true, true, Currency.BRL, null, null, null, BillingCycle.MONTHLY, null),
                         "Name must be at most 255 characters"
                 ),
                 Arguments.of(
                         "Description exceeds 255 characters",
-                        new SubscriptionRequestDto("Valid Name", "D".repeat(256), new BigDecimal("10.00"), now, nextMonth, true, true, Currency.BRL, null, null, null, 1L, null),
+                        new SubscriptionRequestDto("Valid Name", "D".repeat(256), new BigDecimal("10.00"), now, nextMonth, true, true, Currency.BRL, null, null, null, BillingCycle.MONTHLY, null),
                         "Description must be at most 255 characters"
                 ),
                 Arguments.of(
                         "Value is null",
-                        new SubscriptionRequestDto("Valid Name", "Description", null, now, nextMonth, true, true, Currency.BRL, null, null, null, 1L, null),
+                        new SubscriptionRequestDto("Valid Name", "Description", null, now, nextMonth, true, true, Currency.BRL, null, null, null, BillingCycle.MONTHLY, null),
                         "Value is required"
                 ),
                 Arguments.of(
                         "Value is negative",
-                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("-10.00"), now, nextMonth, true, true, Currency.BRL, null, null, null, 1L, null),
+                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("-10.00"), now, nextMonth, true, true, Currency.BRL, null, null, null, BillingCycle.MONTHLY, null),
                         "Value must be positive"
                 ),
                 Arguments.of(
                         "Value is zero",
-                        new SubscriptionRequestDto("Valid Name", "Description", BigDecimal.ZERO, now, nextMonth, true, true, Currency.BRL, null, null, null, 1L, null),
+                        new SubscriptionRequestDto("Valid Name", "Description", BigDecimal.ZERO, now, nextMonth, true, true, Currency.BRL, null, null, null, BillingCycle.MONTHLY, null),
                         "Value must be positive"
                 ),
                 Arguments.of(
                         "Start date is null",
-                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), null, nextMonth, true, true, Currency.BRL, null, null, null, 1L, null),
+                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), null, nextMonth, true, true, Currency.BRL, null, null, null, BillingCycle.MONTHLY, null),
                         "Start date is required"
                 ),
                 Arguments.of(
                         "Next payment date is null",
-                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), now, null, true, true, Currency.BRL, null, null, null, 1L, null),
+                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), now, null, true, true, Currency.BRL, null, null, null, BillingCycle.MONTHLY, null),
                         "Next payment date is required"
                 ),
                 Arguments.of(
                         "Logo URL exceeds 255 characters",
-                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), now, nextMonth, true, true, Currency.BRL, "L".repeat(256), null, null, 1L, null),
+                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), now, nextMonth, true, true, Currency.BRL, "L".repeat(256), null, null, BillingCycle.MONTHLY, null),
                         "Logo URL must be at most 255 characters"
                 ),
                 Arguments.of(
-                        "BillingCycleId is null",
+                        "BillingCycle is null",
                         new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), now, nextMonth, true, true, Currency.BRL, null, null, null, null, null),
                         "BillingCycle is required"
                 )
@@ -214,14 +214,14 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                 null,
                 1L,
                 1L,
-                1L,
+                BillingCycle.MONTHLY,
                 1L
         );
     }
 
     @Test
     void delete_ShouldDeleteSubscription() {
-        Subscriptions subscription = createSubscription("Netflix", new BigDecimal("39.95"), LocalDate.now(), LocalDate.now().plusMonths(1), BillingCycle.builder().id(1L).build(), authenticatedUser);
+        Subscriptions subscription = createSubscription("Netflix", new BigDecimal("39.95"), LocalDate.now(), LocalDate.now().plusMonths(1), BillingCycle.MONTHLY, authenticatedUser);
 
         subscriptionsRepository.save(subscription);
 
@@ -288,7 +288,7 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                 null,
                 1L,
                 1L,
-                1L,
+                BillingCycle.YEARLY,
                 1L
         );
 
@@ -327,8 +327,8 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
     }
 
     private List<Subscriptions> insertSampleSubscriptions() {
-        Subscriptions subscriptions = subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), LocalDate.now(), LocalDate.now().plusMonths(1), BillingCycle.builder().id(1L).build(), authenticatedUser));
-        Subscriptions subscriptions1 = subscriptionsRepository.save(createSubscription("Spotify", new BigDecimal("19.95"), LocalDate.now().minusDays(10), LocalDate.now().plusMonths(1), BillingCycle.builder().id(1L).build(), authenticatedUser));
+        Subscriptions subscriptions = subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), LocalDate.now(), LocalDate.now().plusMonths(1), BillingCycle.MONTHLY, authenticatedUser));
+        Subscriptions subscriptions1 = subscriptionsRepository.save(createSubscription("Spotify", new BigDecimal("19.95"), LocalDate.now().minusDays(10), LocalDate.now().plusMonths(1), BillingCycle.MONTHLY, authenticatedUser));
 
         return List.of(subscriptions, subscriptions1);
     }
@@ -355,7 +355,7 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                 .value(value)
                 .startDate(LocalDate.now())
                 .nextPaymentDate(LocalDate.now().plusMonths(1))
-                .billingCycle(BillingCycle.builder().id(1L).build())
+                .billingCycle(BillingCycle.MONTHLY)
                 .currency(Currency.BRL)
                 .notify(true)
                 .active(active)
@@ -490,7 +490,7 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                     "active": true,
                     "notifyUser": true,
                     "currency": "INVALID",
-                    "billingCycleId": 1
+                    "billingCycle": "MONTHLY"
                 }
                 """;
 
@@ -520,7 +520,7 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                     "active": true,
                     "notifyUser": true,
                     "currency": "XYZ",
-                    "billingCycleId": 1
+                    "billingCycle": "MONTHLY"
                 }
                 """;
 
@@ -598,7 +598,7 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                         .value(new BigDecimal("19.95"))
                         .startDate(LocalDate.now())
                         .nextPaymentDate(LocalDate.now().plusMonths(1))
-                        .billingCycle(BillingCycle.builder().id(1L).build())
+                        .billingCycle(BillingCycle.MONTHLY)
                         .currency(Currency.BRL)
                         .active(true)
                         .notify(true)
@@ -629,7 +629,7 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                         .value(new BigDecimal("19.95"))
                         .startDate(LocalDate.now())
                         .nextPaymentDate(LocalDate.now().plusMonths(1))
-                        .billingCycle(BillingCycle.builder().id(1L).build())
+                        .billingCycle(BillingCycle.MONTHLY)
                         .currency(Currency.BRL)
                         .active(true)
                         .user(otherUser)
@@ -655,7 +655,7 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                         .value(new BigDecimal("19.95"))
                         .startDate(LocalDate.now())
                         .nextPaymentDate(LocalDate.now().plusMonths(1))
-                        .billingCycle(BillingCycle.builder().id(1L).build())
+                        .billingCycle(BillingCycle.MONTHLY)
                         .currency(Currency.BRL)
                         .active(true)
                         .user(otherUser)
@@ -683,7 +683,7 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                         .value(new BigDecimal("19.95"))
                         .startDate(LocalDate.now())
                         .nextPaymentDate(LocalDate.now().plusMonths(1))
-                        .billingCycle(BillingCycle.builder().id(1L).build())
+                        .billingCycle(BillingCycle.MONTHLY)
                         .currency(Currency.BRL)
                         .active(true)
                         .user(otherUser)
