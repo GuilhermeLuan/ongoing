@@ -139,6 +139,25 @@ static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-
 
 ---
 
+## Dashboard: Quando Dados Precisam de "Unidade" Comum
+
+O dashboard (gastos por categoria, total do mes, media mensal, projeção anual) tem um problema classico: cada assinatura
+vem em um ciclo e (as vezes) em uma moeda diferente. Se voce somar tudo "cru", vira salada.
+
+Pra resolver isso, a gente cria uma pequena abstracao: `ConvertedSubscription`.
+
+- Ele carrega a `Subscriptions` original + o `priceInBrl` (valor ja convertido)
+- Ele sabe calcular o "equivalente mensal" (`monthlyPrice()`) e o "custo anual" (`yearlyPrice()`) com base no billing
+  cycle
+- Ele tambem ajuda a responder a pergunta: "isso vence neste mes?" (`isDueIn(YearMonth)`)
+
+Em outras palavras: a entity continua sendo o "dado bruto" do banco, e o record vira a "unidade de conta" do dashboard.
+
+Licao pratica: sempre que voce for agregar valores (soma, media, ranking), garanta que todo mundo esta na mesma unidade
+antes de fazer conta.
+
+---
+
 ## O Fluxo de uma Request: Anatomia Completa
 
 Vamos seguir o caminho de uma request POST para criar uma assinatura:
