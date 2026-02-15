@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Ongoing is a landing page for a subscription management SaaS product, built with Next.js 14 (App Router) and Tailwind CSS. The content is in Brazilian Portuguese.
+Ongoing is a subscription management SaaS platform, built with Next.js 14 (App Router) and Tailwind CSS. The frontend has two main areas: a public marketing landing page and an authenticated dashboard application. All content is in Brazilian Portuguese.
 
 ## Commands
 
@@ -16,19 +16,39 @@ npm run lint     # Run ESLint
 
 ## Architecture
 
-### Component Organization
+### Two-Area App Structure
 
-Components follow a three-tier structure under `src/components/`:
+The app uses **Next.js Route Groups** to separate concerns:
 
-- **ui/** - Primitive reusable components (Button, Card, Badge, Container, GradientText)
-- **shared/** - Domain-specific reusable components (Logo, FeatureCard, PricingCard, TestimonialCard, StepCard, DashboardPreview)
-- **layout/** - Page structure components (Header, Footer)
-- **sections/** - Full landing page sections (Hero, Features, HowItWorks, Pricing, Testimonials, FinalCTA)
+- **`(marketing)/`** — Public landing page at `/`. Uses Header + Footer layout.
+- **`(app)/`** — Authenticated dashboard at `/dashboard`, `/subscriptions`. Uses Sidebar layout with SidebarProvider context.
+
+### Layer Documentation
+
+Each `src/` directory has its own CLAUDE.md with detailed documentation:
+
+| Layer | CLAUDE.md | Contents |
+|-------|-----------|----------|
+| `src/components/` | [components/CLAUDE.md](src/components/CLAUDE.md) | 5-tier component hierarchy (ui, shared, layout, sections, app), all props and variants |
+| `src/hooks/` | [hooks/CLAUDE.md](src/hooks/CLAUDE.md) | useScrollAnimation hook API and usage patterns |
+| `src/lib/` | [lib/CLAUDE.md](src/lib/CLAUDE.md) | cn() utility, mock data types, label maps, helper functions |
+| `src/app/` | [app/CLAUDE.md](src/app/CLAUDE.md) | Route groups, layouts, pages, data flow |
+
+### Component Organization (5 tiers)
+
+Components follow a five-tier hierarchy under `src/components/`:
+
+1. **ui/** (9) — Primitive reusable: Button, Card, Badge, Input, Select, Avatar, Container, GradientText, Skeleton
+2. **shared/** (6) — Domain-specific reusable: Logo, FeatureCard, PricingCard, TestimonialCard, StepCard, DashboardPreview
+3. **layout/** (2) — Page structure: Header (sticky, mobile menu), Footer (dark bg, 3 link columns)
+4. **sections/** (6) — Landing page sections: Hero, Features, HowItWorks, Pricing, Testimonials, FinalCTA
+5. **app/** (6) — Dashboard: Sidebar, SidebarContext, AppHeader, StatCard, SubscriptionCard, SubscriptionList
 
 Each tier has an `index.ts` barrel export. Import from the tier, not individual files:
 ```typescript
 import { Button, Card } from "@/components/ui";
 import { Header, Footer } from "@/components/layout";
+import { Sidebar, AppHeader } from "@/components/app";
 ```
 
 ### Styling Approach
@@ -38,6 +58,20 @@ import { Header, Footer } from "@/components/layout";
 - Three font families via CSS variables: `font-display` (Plus Jakarta Sans), `font-body` (Inter), `font-mono` (JetBrains Mono)
 - Custom animations defined in Tailwind config: `fadeIn`, `fadeInUp`, `scaleIn`, `slideInLeft`, `slideInRight`, `float`
 - Custom shadows: `soft`, `medium`, `elevated`, `glow`, `glow-accent`
+- Icon library: **Lucide React**
+
+### Design System Tokens
+
+```
+Colors:    primary-{50-950} (green), accent-{50-950} (purple), neutral-{50-950}
+Shadows:   soft, medium, elevated, glow, glow-accent
+Radii:     default (8px), lg (12px), xl (16px), 2xl (24px)
+Container: sm (3xl), md (5xl), lg (7xl), xl (1400px)
+```
+
+### Data Flow
+
+Currently uses **mock data** from `src/lib/mock-data.ts` (12 subscriptions, pre-calculated stats). Backend integration via `NEXT_PUBLIC_API_URL` is planned.
 
 ### Path Aliases
 
