@@ -12,10 +12,9 @@ public class ExchangeRateClientConfig {
 
     @Bean
     public ExchangeRateClient exchangeRateClient(
-            RestClient.Builder restClientBuilder,
             @Value("${exchange.api.url}") String exchangeApiUrl
     ) {
-        RestClient restClient = restClientBuilder
+        RestClient restClient = RestClient.builder()
                 .baseUrl(exchangeApiUrl)
                 .build();
 
