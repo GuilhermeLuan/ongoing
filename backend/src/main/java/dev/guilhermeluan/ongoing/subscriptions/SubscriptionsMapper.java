@@ -22,21 +22,18 @@ public interface SubscriptionsMapper {
     @Mapping(source = "notifyUser", target = "notify")
     @Mapping(source = "categoryId", target = "category.id")
     @Mapping(source = "paymentMethodId", target = "paymentMethod.id")
-    @Mapping(source = "billingCycleId", target = "billingCycle.id")
     @Mapping(source = "subscriptionTypeId", target = "subscriptionType.id")
     Subscriptions toSubscription(SubscriptionResponseDto dto);
 
     @Mapping(source = "notifyUser", target = "notify")
     @Mapping(source = "categoryId", target = "category.id")
     @Mapping(source = "paymentMethodId", target = "paymentMethod.id")
-    @Mapping(source = "billingCycleId", target = "billingCycle.id")
     @Mapping(source = "subscriptionTypeId", target = "subscriptionType.id")
     Subscriptions toSubscription(SubscriptionRequestDto dto);
 
     @Mapping(source = "notifyUser", target = "notify")
     @Mapping(source = "categoryId", target = "category.id")
     @Mapping(source = "paymentMethodId", target = "paymentMethod.id")
-    @Mapping(source = "billingCycleId", target = "billingCycle.id")
     @Mapping(source = "subscriptionTypeId", target = "subscriptionType.id")
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateSubscriptionFromDto(SubscriptionRequestDto dto, @MappingTarget Subscriptions subscription);

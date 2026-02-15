@@ -3,6 +3,12 @@ spring:
     url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT:5432}/${POSTGRES_DB}?sslmode=require
     username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD}
+      username: ${REDIS_USERNAME}
   jpa:
     hibernate:
       ddl-auto: validate
@@ -14,3 +20,6 @@ logging:
   level:
     root: WARN
     dev.guilhermeluan: INFO
+exchange:
+  api:
+    url: ${EXCHANGE_API_URL}
