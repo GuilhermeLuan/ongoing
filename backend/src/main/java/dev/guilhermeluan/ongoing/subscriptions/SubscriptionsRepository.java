@@ -31,5 +31,12 @@ public interface SubscriptionsRepository extends JpaRepository<Subscriptions, Lo
 
     Optional<Subscriptions> findByIdAndUserId(Long id, Long userId);
 
+    @Query("""
+            SELECT s FROM Subscriptions s
+            WHERE s.user.id = :userId
+            AND s.active = true
+            """)
+    List<Subscriptions> findActiveByUserId(@Param("userId") Long userId);
+
     List<Subscriptions> User(User user);
 }

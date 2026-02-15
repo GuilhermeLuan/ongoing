@@ -8,9 +8,11 @@ spring:
       ddl-auto: validate
   flyway:
     enabled: true
-
 security:
   jwt:
     secret: mKajIumMVBXacG48DHnLz6EH0f0hgp5vTgIlrQsI1op8tokendeteste
     expiration: 900000
     refresh-expiration: 6048000000
+exchange:
+  api:
+    url: http://mock-exchange-api.test

@@ -139,6 +139,25 @@ static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-
 
 ---
 
+## Dashboard: Quando Dados Precisam de "Unidade" Comum
+
+O dashboard (gastos por categoria, total do mes, media mensal, projeção anual) tem um problema classico: cada assinatura
+vem em um ciclo e (as vezes) em uma moeda diferente. Se voce somar tudo "cru", vira salada.
+
+Pra resolver isso, a gente cria uma pequena abstracao: `ConvertedSubscription`.
+
+- Ele carrega a `Subscriptions` original + o `priceInBrl` (valor ja convertido)
+- Ele sabe calcular o "equivalente mensal" (`monthlyPrice()`) e o "custo anual" (`yearlyPrice()`) com base no billing
+  cycle
+- Ele tambem ajuda a responder a pergunta: "isso vence neste mes?" (`isDueIn(YearMonth)`)
+
+Em outras palavras: a entity continua sendo o "dado bruto" do banco, e o record vira a "unidade de conta" do dashboard.
+
+Licao pratica: sempre que voce for agregar valores (soma, media, ranking), garanta que todo mundo esta na mesma unidade
+antes de fazer conta.
+
+---
+
 ## O Fluxo de uma Request: Anatomia Completa
 
 Vamos seguir o caminho de uma request POST para criar uma assinatura:
@@ -384,6 +403,57 @@ Se quiser evoluir o projeto:
 4. **Notificações**: Job que avisa antes da cobrança
 5. **Multi-tenancy**: Suporte a múltiplos usuários
 6. **Cache**: Redis para queries frequentes
+
+---
+
+## O Que Mudou Agora: Modulo de Cambio (Phase 2 do Dashboard)
+
+Pra montar um dashboard decente, a gente precisa comparar coisas na mesma moeda.
+O problema e que suas assinaturas podem estar em BRL, USD e EUR. Entao a "Phase 2" do plano cria um modulo que:
+
+- Busca taxas de cambio em uma API externa
+- Converte valores para BRL
+- Usa cache (Redis) pra nao ficar batendo na API toda hora
+
+### O Jeito Moderno do Spring Boot 4: HttpExchange
+
+Antes, o normal era usar `RestTemplate` (antigo) ou escrever muito codigo em cima de `WebClient`.
+No Spring moderno, da pra declarar um cliente HTTP como uma interface e anotar com `@HttpExchange`.
+O Spring cria um proxy pra voce e voce chama como se fosse um metodo Java comum.
+
+No projeto, isso ficou assim:
+
+- `backend/src/main/java/dev/guilhermeluan/ongoing/exchange/ExchangeRateClient.java`
+- `backend/src/main/java/dev/guilhermeluan/ongoing/exchange/ExchangeRateClientConfig.java`
+
+E a regra do jogo e simples:
+
+- A API externa retorna as taxas com base em uma moeda (por padrao, USD)
+- A gente deriva `USD->BRL` e `EUR->BRL`
+- O resto do sistema so enxerga "valor em BRL" e segue a vida
+
+### Caching: o truque que salva o limite de requests
+
+O metodo `getRatesToBrl()` em `backend/src/main/java/dev/guilhermeluan/ongoing/exchange/ExchangeRateService.java` esta
+anotado com:
+
+`@Cacheable(value = "exchange-rates", key = "'BRL'")`
+
+Ou seja: na primeira chamada, ele bate na API e guarda o resultado; nas proximas, ele volta do Redis.
+Isso e exatamente o tipo de otimizacao "pequena" que vira grande quando voce tem varios usuarios acessando o dashboard.
+
+---
+
+## Preparando o terreno do Dashboard: DTOs (Phase 3)
+
+Antes de escrever a logica do dashboard, a gente define o contrato de resposta.
+Esses records vivem em:
+
+- `backend/src/main/java/dev/guilhermeluan/ongoing/dashboard/dto/CategorySpending.java`
+- `backend/src/main/java/dev/guilhermeluan/ongoing/dashboard/dto/DashboardResponse.java`
+
+Detalhe importante: como `Category` no seu modelo e uma entidade (tem `id` e `name`), o dashboard manda os dois.
+O frontend pode usar `categoryId` como chave estavel e `categoryName` como label.
 
 A arquitetura atual suporta tudo isso sem grandes refatorações. Esse é o sinal de um bom design.
 

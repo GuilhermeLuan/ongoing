@@ -1,5 +1,6 @@
 package dev.guilhermeluan.ongoing.subscriptions.dto;
 
+import dev.guilhermeluan.ongoing.subscriptions.entities.BillingCycle;
 import dev.guilhermeluan.ongoing.subscriptions.entities.Currency;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -39,7 +40,7 @@ public record SubscriptionRequestDto(
         Long categoryId,
         Long paymentMethodId,
         @NotNull(message = "BillingCycle is required")
-        Long billingCycleId,
+        BillingCycle billingCycle,
         Long subscriptionTypeId
 ) {
 }
