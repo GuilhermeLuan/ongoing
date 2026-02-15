@@ -2,6 +2,7 @@ package dev.guilhermeluan.ongoing.exchange;
 
 import dev.guilhermeluan.ongoing.exchange.dto.ExchangeRateResponse;
 import dev.guilhermeluan.ongoing.subscriptions.entities.Currency;
+import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -10,13 +11,10 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 
 @Service
+@RequiredArgsConstructor
 public class ExchangeRateService {
 
     private final ExchangeRateClient client;
-
-    public ExchangeRateService(ExchangeRateClient client) {
-        this.client = client;
-    }
 
     private static BigDecimal computeRateToBrl(ExchangeRateResponse response, Currency base, Currency from) {
         if (from == Currency.BRL) {
