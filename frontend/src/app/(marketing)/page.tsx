@@ -1,11 +1,4 @@
-import {
-  Hero,
-  Features,
-  HowItWorks,
-  Pricing,
-  Testimonials,
-  FinalCTA,
-} from "@/components/sections";
+import {Features, FinalCTA, Hero, HowItWorks, Pricing,} from "@/components/sections";
 
 export default function Home() {
   return (
@@ -14,7 +7,6 @@ export default function Home() {
       <Features />
       <HowItWorks />
       <Pricing />
-      <Testimonials />
       <FinalCTA />
     </>
   );

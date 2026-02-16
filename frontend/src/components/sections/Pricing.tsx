@@ -1,9 +1,9 @@
 "use client";
 
-import { Container, GradientText } from "@/components/ui";
-import { PricingCard } from "@/components/shared";
-import { useScrollAnimation } from "@/hooks/useScrollAnimation";
-import { cn } from "@/lib/utils";
+import {Container, GradientText} from "@/components/ui";
+import {PricingCard} from "@/components/shared";
+import {useScrollAnimation} from "@/hooks/useScrollAnimation";
+import {cn} from "@/lib/utils";
 
 const plans = [
   {
@@ -23,27 +23,14 @@ const plans = [
     description: "Para quem leva a sério",
     features: [
       "Assinaturas ilimitadas",
-      "Alertas via WhatsApp",
+        "Alertas personalizáveis",
       "Dashboard completo",
-      "Detecção automática",
       "Relatórios mensais",
+        "Exportação de dados",
       "Suporte prioritário",
     ],
     highlighted: true,
     badge: "Mais popular",
-  },
-  {
-    name: "Business",
-    price: "R$ 49,90",
-    description: "Para times e empresas",
-    features: [
-      "Tudo do Pro",
-      "Multi-usuários",
-      "API de integração",
-      "Exportação de dados",
-      "SLA garantido",
-      "Gerente de conta",
-    ],
   },
 ];
 
@@ -74,7 +61,7 @@ export function Pricing() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 items-center max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 items-center max-w-3xl mx-auto">
           {plans.map((plan, index) => (
             <div
               key={plan.name}

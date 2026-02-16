@@ -1,9 +1,9 @@
 "use client";
 
-import { Container, Button, GradientText } from "@/components/ui";
-import { useScrollAnimation } from "@/hooks/useScrollAnimation";
-import { cn } from "@/lib/utils";
-import { ArrowRight, CheckCircle } from "lucide-react";
+import {Button, Container, GradientText} from "@/components/ui";
+import {useScrollAnimation} from "@/hooks/useScrollAnimation";
+import {cn} from "@/lib/utils";
+import {ArrowRight, CheckCircle} from "lucide-react";
 
 const benefits = [
   "Grátis para sempre no plano básico",
@@ -39,16 +39,13 @@ export function FinalCTA() {
             dinheiro com o Ongoing.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+            <div className="flex justify-center mb-8">
             <Button size="lg" className="group">
               Criar conta grátis
               <ArrowRight
                 size={20}
                 className="ml-2 transition-transform group-hover:translate-x-1"
               />
-            </Button>
-            <Button variant="outline" size="lg">
-              Falar com vendas
             </Button>
           </div>
 

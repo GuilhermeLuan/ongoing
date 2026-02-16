@@ -1,10 +1,10 @@
 "use client";
 
-import { Container, GradientText } from "@/components/ui";
-import { StepCard } from "@/components/shared";
-import { useScrollAnimation } from "@/hooks/useScrollAnimation";
-import { cn } from "@/lib/utils";
-import { UserPlus, ListPlus, BellRing } from "lucide-react";
+import {Container, GradientText} from "@/components/ui";
+import {StepCard} from "@/components/shared";
+import {useScrollAnimation} from "@/hooks/useScrollAnimation";
+import {cn} from "@/lib/utils";
+import {BellRing, ListPlus, UserPlus} from "lucide-react";
 
 const steps = [
   {
@@ -19,7 +19,7 @@ const steps = [
     icon: ListPlus,
     title: "Adicione assinaturas",
     description:
-      "Adicione manualmente ou conecte seu email para detecção automática.",
+        "Cadastre suas assinaturas em poucos cliques. Rápido, simples e organizado.",
   },
   {
     step: 3,
