@@ -1,17 +1,10 @@
 "use client";
 
-import { Container, GradientText } from "@/components/ui";
-import { FeatureCard } from "@/components/shared";
-import { useScrollAnimation } from "@/hooks/useScrollAnimation";
-import { cn } from "@/lib/utils";
-import {
-  Bell,
-  PieChart,
-  Smartphone,
-  Shield,
-  Zap,
-  Calendar,
-} from "lucide-react";
+import {Container, GradientText} from "@/components/ui";
+import {FeatureCard} from "@/components/shared";
+import {useScrollAnimation} from "@/hooks/useScrollAnimation";
+import {cn} from "@/lib/utils";
+import {Bell, Calendar, PieChart, Shield,} from "lucide-react";
 
 const features = [
   {
@@ -27,22 +20,10 @@ const features = [
       "Visualize todos os seus gastos com assinaturas em gráficos claros e intuitivos. Entenda para onde vai seu dinheiro.",
   },
   {
-    icon: Smartphone,
-    title: "Notificações WhatsApp",
-    description:
-      "Alertas direto no seu WhatsApp. Sem precisar abrir outro app ou checar emails.",
-  },
-  {
     icon: Shield,
     title: "Dados Seguros",
     description:
       "Seus dados são criptografados e nunca compartilhados. Privacidade é nossa prioridade.",
-  },
-  {
-    icon: Zap,
-    title: "Detecção Automática",
-    description:
-      "Conecte seu email e deixe o Ongoing encontrar suas assinaturas automaticamente.",
   },
   {
     icon: Calendar,
@@ -79,7 +60,7 @@ export function Features() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
           {features.map((feature, index) => (
             <div
               key={feature.title}

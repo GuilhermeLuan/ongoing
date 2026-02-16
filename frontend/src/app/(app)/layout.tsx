@@ -1,6 +1,7 @@
 "use client";
 
-import { Sidebar, SidebarProvider, useSidebar } from "@/components/app";
+import {Sidebar, SidebarProvider, useSidebar} from "@/components/app";
+import {ProtectedRoute} from "@/components/auth";
 
 function AppContent({ children }: { children: React.ReactNode }) {
   const { isOpen, close } = useSidebar();
@@ -20,10 +21,12 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   return (
-    <SidebarProvider>
-      <div className="min-h-screen bg-neutral-50">
-        <AppContent>{children}</AppContent>
-      </div>
-    </SidebarProvider>
+      <ProtectedRoute>
+          <SidebarProvider>
+              <div className="min-h-screen bg-neutral-50">
+                  <AppContent>{children}</AppContent>
+              </div>
+          </SidebarProvider>
+      </ProtectedRoute>
   );
 }

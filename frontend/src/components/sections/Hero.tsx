@@ -1,10 +1,10 @@
 "use client";
 
-import { Container, Button, Badge, GradientText } from "@/components/ui";
-import { DashboardPreview } from "@/components/shared";
-import { useScrollAnimation } from "@/hooks/useScrollAnimation";
-import { cn } from "@/lib/utils";
-import { ArrowRight, Sparkles } from "lucide-react";
+import {Badge, Button, Container, GradientText} from "@/components/ui";
+import {DashboardPreview} from "@/components/shared";
+import {useScrollAnimation} from "@/hooks/useScrollAnimation";
+import {cn} from "@/lib/utils";
+import {ArrowRight, Sparkles} from "lucide-react";
 
 export function Hero() {
   const { ref, isVisible } = useScrollAnimation();
@@ -35,7 +35,7 @@ export function Hero() {
           >
             <Badge variant="primary" className="mb-6 inline-flex items-center gap-2">
               <Sparkles size={14} />
-              Novo: Alertas inteligentes via WhatsApp
+                Novo: Calendário de cobranças
             </Badge>
 
             <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-neutral-900 mb-6 leading-tight">

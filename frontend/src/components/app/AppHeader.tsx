@@ -1,8 +1,11 @@
 "use client";
 
-import { Input } from "@/components/ui";
-import { useSidebar } from "./SidebarContext";
-import { Menu } from "lucide-react";
+import {useEffect, useRef, useState} from "react";
+import {useRouter} from "next/navigation";
+import {Avatar, Input} from "@/components/ui";
+import {useSidebar} from "./SidebarContext";
+import {useAuth} from "@/features/auth";
+import {LogOut, Menu} from "lucide-react";
 
 interface AppHeaderProps {
   title?: string;
@@ -11,6 +14,33 @@ interface AppHeaderProps {
 
 export function AppHeader({ title, subtitle }: AppHeaderProps) {
   const { open } = useSidebar();
+    const {user, logout} = useAuth();
+    const router = useRouter();
+
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!isDropdownOpen) return;
+
+        function handleClickOutside(e: MouseEvent) {
+            if (
+                dropdownRef.current &&
+                !dropdownRef.current.contains(e.target as Node)
+            ) {
+                setIsDropdownOpen(false);
+            }
+        }
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [isDropdownOpen]);
+
+    function handleLogout() {
+        setIsDropdownOpen(false);
+        logout();
+        router.push("/login");
+    }
 
   return (
     <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-sm border-b border-neutral-100">
@@ -29,7 +59,9 @@ export function AppHeader({ title, subtitle }: AppHeaderProps) {
           {/* Title */}
           <div className="hidden sm:block">
             {title && (
-              <h1 className="text-lg font-semibold text-neutral-900">{title}</h1>
+                <h1 className="text-lg font-semibold text-neutral-900">
+                    {title}
+                </h1>
             )}
             {subtitle && (
               <p className="text-sm text-neutral-500">{subtitle}</p>
@@ -96,12 +128,50 @@ export function AppHeader({ title, subtitle }: AppHeaderProps) {
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
           </button>
 
-          {/* User avatar - mobile only */}
-          <button className="lg:hidden p-1">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-400 to-accent-500 flex items-center justify-center">
-              <span className="text-white font-semibold text-xs">GS</span>
+            {/* User avatar with dropdown */}
+            <div className="relative" ref={dropdownRef}>
+                <button
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="p-1 rounded-full transition-all hover:ring-2 hover:ring-neutral-200"
+                    aria-label="Menu do usuário"
+                >
+                    <Avatar
+                        size="sm"
+                        fallback={user?.name}
+                        alt={user?.name || "Usuário"}
+                    />
+                </button>
+
+                {/* Dropdown */}
+                {isDropdownOpen && (
+                    <div
+                        className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-elevated border border-neutral-100 py-2 min-w-[200px] z-50 animate-fadeIn">
+                        {/* User info */}
+                        {user && (
+                            <div className="px-4 py-3">
+                                <p className="text-sm font-medium text-neutral-900 truncate">
+                                    {user.name}
+                                </p>
+                                <p className="text-xs text-neutral-500 truncate">
+                                    {user.email}
+                                </p>
+                            </div>
+                        )}
+
+                        <div className="border-t border-neutral-100 my-1"/>
+
+                        {/* Logout */}
+                        <button
+                            onClick={handleLogout}
+                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg mx-1 transition-colors"
+                            style={{width: "calc(100% - 8px)"}}
+                        >
+                            <LogOut size={16}/>
+                            Sair
+                        </button>
+                    </div>
+                )}
             </div>
-          </button>
         </div>
       </div>
     </header>

@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import {useEffect, useState} from "react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
-import { Container, Button } from "@/components/ui";
-import { Logo } from "@/components/shared";
-import { Menu, X } from "lucide-react";
+import {cn} from "@/lib/utils";
+import {Button, Container} from "@/components/ui";
+import {Logo} from "@/components/shared";
+import {Menu, X} from "lucide-react";
 
 const navLinks = [
   { label: "Features", href: "#features" },
@@ -54,14 +54,16 @@ export function Header() {
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-4">
-            <Link href="/dashboard">
+              <Link href="/login">
               <Button variant="ghost" size="sm">
                 Entrar
               </Button>
             </Link>
-            <Button variant="primary" size="sm">
-              Começar grátis
-            </Button>
+              <Link href="/register">
+                  <Button variant="primary" size="sm">
+                      Começar grátis
+                  </Button>
+              </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -93,14 +95,16 @@ export function Header() {
                 </a>
               ))}
               <div className="pt-4 border-t border-neutral-100 space-y-3">
-                <Link href="/dashboard">
+                  <Link href="/login">
                   <Button variant="outline" className="w-full">
                     Entrar
                   </Button>
                 </Link>
-                <Button variant="primary" className="w-full">
-                  Começar grátis
-                </Button>
+                  <Link href="/register">
+                      <Button variant="primary" className="w-full">
+                          Começar grátis
+                      </Button>
+                  </Link>
               </div>
             </div>
           </div>
