@@ -12,6 +12,7 @@ interface SubscriptionListProps {
     totalPages: number;
     onPageChange: (page: number) => void;
     onFilterChange: (filters: Partial<SubscriptionFilters>) => void;
+    onClick?: (subscription: SubscriptionResponse) => void;
     onEdit: (subscription: SubscriptionResponse) => void;
     onDelete: (subscription: SubscriptionResponse) => void;
 }
@@ -29,6 +30,7 @@ export function SubscriptionList({
                                      totalPages,
                                      onPageChange,
                                      onFilterChange,
+                                     onClick,
                                      onEdit,
                                      onDelete,
 }: SubscriptionListProps) {
@@ -127,6 +129,7 @@ export function SubscriptionList({
                         <SubscriptionCard
                             key={subscription.id}
                             subscription={subscription}
+                            onClick={onClick ? () => onClick(subscription) : undefined}
                             onEdit={onEdit}
                             onDelete={onDelete}
                         />

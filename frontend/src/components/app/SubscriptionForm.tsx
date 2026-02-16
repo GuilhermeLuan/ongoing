@@ -1,6 +1,6 @@
 "use client";
 
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {ArrowLeft, Bell} from "lucide-react";
 import {Button, Input, Select, Toggle} from "@/components/ui";
 import {SubscriptionHeader} from "./SubscriptionHeader";
@@ -146,37 +146,54 @@ export function SubscriptionForm({
     const isPopularService = !!prefill?.brandColor;
     const isEditing = !!subscription;
 
+    // Sync form values when subscription or prefill changes
+    useEffect(() => {
+        setValues(getInitialValues(subscription, prefill));
+        setCustomization({
+            name: prefill?.name || subscription?.name || "",
+            avatarColor: prefill?.brandColor || getDefaultColor(prefill?.name || subscription?.name || ""),
+        });
+    }, [subscription, prefill]);
+
     const validate = (): boolean => {
         const nextErrors: Partial<Record<keyof FormValues, string>> = {};
 
+        // Name: required, max 255
         if (!values.name.trim()) {
             nextErrors.name = "Nome é obrigatório.";
         } else if (values.name.trim().length > 255) {
             nextErrors.name = "Nome deve ter no máximo 255 caracteres.";
         }
 
-        if (values.description.trim().length > 255) {
+        // Description: optional, but if provided max 255
+        if (values.description && values.description.trim().length > 255) {
             nextErrors.description = "Descrição deve ter no máximo 255 caracteres.";
         }
 
+        // Value: required, must be positive
         const parsedValue = Number(values.value);
         if (!values.value || Number.isNaN(parsedValue)) {
             nextErrors.value = "Valor é obrigatório.";
         } else if (parsedValue <= 0) {
-            nextErrors.value = "Valor deve ser positivo.";
+            nextErrors.value = "Valor deve ser maior que zero.";
         }
 
+        // Start date: required
         if (!values.startDate) {
             nextErrors.startDate = "Data de início é obrigatória.";
         }
 
+        // Billing cycle: required
         if (!values.billingCycle) {
             nextErrors.billingCycle = "Ciclo de cobrança é obrigatório.";
         }
 
-        if (values.logoUrl.length > 255) {
+        // Logo URL: optional, but if provided max 255
+        if (values.logoUrl && values.logoUrl.trim().length > 255) {
             nextErrors.logoUrl = "Logo URL deve ter no máximo 255 caracteres.";
         }
+
+        // Category, PaymentMethod: optional, no validation needed
 
         setErrors(nextErrors);
         return Object.keys(nextErrors).length === 0;
@@ -207,6 +224,7 @@ export function SubscriptionForm({
             logoUrl: values.logoUrl.trim() || undefined,
             categoryId: values.categoryId ? Number(values.categoryId) : undefined,
             paymentMethodId: values.paymentMethodId ? Number(values.paymentMethodId) : undefined,
+            subscriptionTypeId: 1, // Always "Paid" by default
         });
     };
 
@@ -350,19 +368,6 @@ export function SubscriptionForm({
                             error={errors.logoUrl}
                             maxLength={255}
                         />
-                    )}
-
-                    {/* Assinatura ativa - only when editing existing */}
-                    {isEditing && (
-                        <label className="flex items-center gap-2 text-sm text-neutral-700">
-                            <input
-                                type="checkbox"
-                                checked={values.active}
-                                onChange={(event) => setValue("active", event.target.checked)}
-                                className="h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
-                            />
-                            Assinatura ativa
-                        </label>
                     )}
 
                     {/* Lembrete de renovação */}

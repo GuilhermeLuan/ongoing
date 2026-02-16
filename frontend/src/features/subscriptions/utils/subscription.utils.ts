@@ -137,3 +137,23 @@ export const calculateNextPaymentDate = (
 
     return `${year}-${month}-${day}`;
 };
+
+/**
+ * Get category name from category ID.
+ * Returns "Sem categoria" if no category is provided.
+ */
+export const getCategoryName = (categoryId: number | null): string => {
+    if (!categoryId) return "Sem categoria";
+    const category = categoryOptions.find(c => c.value === categoryId.toString());
+    return category?.label ?? "Desconhecida";
+};
+
+/**
+ * Get payment method name from payment method ID.
+ * Returns "Não informado" if no payment method is provided.
+ */
+export const getPaymentMethodName = (paymentMethodId: number | null): string => {
+    if (!paymentMethodId) return "Não informado";
+    const method = paymentMethodOptions.find(m => m.value === paymentMethodId.toString());
+    return method?.label ?? "Desconhecido";
+};

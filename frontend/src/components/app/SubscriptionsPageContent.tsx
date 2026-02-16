@@ -1,7 +1,7 @@
 "use client";
 
 import {useMemo, useState} from "react";
-import {AppHeader, ServicePicker, SubscriptionForm, SubscriptionList,} from "@/components/app";
+import {AppHeader, ServicePicker, SubscriptionDetailsView, SubscriptionForm, SubscriptionList,} from "@/components/app";
 import {Button, Modal} from "@/components/ui";
 import {
     type PopularService,
@@ -16,7 +16,7 @@ const INITIAL_FILTERS: SubscriptionFilters = {
     size: 12,
 };
 
-type ModalStep = "picker" | "form";
+type ModalStep = "picker" | "form" | "details";
 
 export function SubscriptionsPageContent() {
     const [filters, setFilters] = useState<SubscriptionFilters>(INITIAL_FILTERS);
@@ -29,6 +29,9 @@ export function SubscriptionsPageContent() {
     const [modalStep, setModalStep] = useState<ModalStep>("picker");
     const [selectedService, setSelectedService] = useState<PopularService | null>(null);
     const [customName, setCustomName] = useState<string | null>(null);
+
+    // Details view state
+    const [viewingSubscription, setViewingSubscription] = useState<SubscriptionResponse | null>(null);
 
     const {
         subscriptions,
@@ -46,6 +49,7 @@ export function SubscriptionsPageContent() {
         setEditingSubscription(null);
         setSelectedService(null);
         setCustomName(null);
+        setViewingSubscription(null);
         setModalStep("picker");
     };
 
@@ -59,6 +63,23 @@ export function SubscriptionsPageContent() {
         setCustomName(null);
         setModalStep("picker");
         setIsModalOpen(true);
+    };
+
+    const handleViewDetails = (subscription: SubscriptionResponse) => {
+        setViewingSubscription(subscription);
+        setEditingSubscription(null);
+        setSelectedService(null);
+        setCustomName(null);
+        setModalStep("details");
+        setIsModalOpen(true);
+    };
+
+    const handleEditFromDetails = () => {
+        if (!viewingSubscription) return;
+
+        setEditingSubscription(viewingSubscription);
+        setViewingSubscription(null);
+        setModalStep("form");
     };
 
     const handleEdit = (subscription: SubscriptionResponse) => {
@@ -140,6 +161,10 @@ export function SubscriptionsPageContent() {
 
     // Dynamic modal title
     const modalTitle = useMemo(() => {
+        if (modalStep === "details") {
+            return "Detalhes da assinatura";
+        }
+
         if (editingSubscription) {
             return "Editar assinatura";
         }
@@ -209,6 +234,7 @@ export function SubscriptionsPageContent() {
                     totalPages={page?.totalPages ?? 1}
                     onPageChange={handlePageChange}
                     onFilterChange={handleFilterChange}
+                    onClick={handleViewDetails}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                 />
@@ -218,9 +244,15 @@ export function SubscriptionsPageContent() {
                 isOpen={isModalOpen}
                 onClose={closeModal}
                 title={modalTitle}
-                size="lg"
+                size={modalStep === "details" ? "md" : "lg"}
             >
-                {modalStep === "picker" ? (
+                {modalStep === "details" && viewingSubscription ? (
+                    <SubscriptionDetailsView
+                        subscription={viewingSubscription}
+                        onEdit={handleEditFromDetails}
+                        onClose={closeModal}
+                    />
+                ) : modalStep === "picker" ? (
                     <ServicePicker
                         onSelectService={handleServiceSelect}
                         onCreateCustom={handleCreateCustom}

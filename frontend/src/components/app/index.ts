@@ -10,3 +10,4 @@ export {ServicePicker} from "./ServicePicker";
 export {SubscriptionHeader} from "./SubscriptionHeader";
 export {AppearanceEditor} from "./AppearanceEditor";
 export {ColorPicker} from "./ColorPicker";
+export {SubscriptionDetailsView} from "./SubscriptionDetailsView";

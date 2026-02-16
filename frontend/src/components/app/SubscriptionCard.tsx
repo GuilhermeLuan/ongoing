@@ -1,3 +1,6 @@
+"use client";
+
+import {useEffect, useState} from "react";
 import {Badge} from "@/components/ui";
 import {
     billingCycleLabels,
@@ -40,9 +43,16 @@ export function SubscriptionCard({
                                      onEdit,
                                      onDelete,
 }: SubscriptionCardProps) {
+    const [imageError, setImageError] = useState(false);
     const daysUntil = getDaysUntilBilling(subscription.nextPaymentDate);
   const isUrgent = daysUntil <= 3 && daysUntil >= 0;
     const avatarColor = getAvatarColor(subscription.name);
+    const showLogo = subscription.logoUrl && !imageError;
+
+    // Reset image error when subscription changes
+    useEffect(() => {
+        setImageError(false);
+    }, [subscription.logoUrl]);
 
   if (variant === "compact") {
     return (
@@ -53,12 +63,21 @@ export function SubscriptionCard({
         )}
         onClick={onClick}
       >
-        <div
-          className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm"
-          style={{backgroundColor: avatarColor}}
-        >
-          {subscription.name.slice(0, 2).toUpperCase()}
-        </div>
+          {showLogo ? (
+              <img
+                  src={subscription.logoUrl ?? undefined}
+                  alt={subscription.name}
+                  className="w-10 h-10 rounded-lg object-cover shadow-soft"
+                  onError={() => setImageError(true)}
+              />
+          ) : (
+              <div
+                  className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-soft"
+                  style={{backgroundColor: avatarColor}}
+              >
+                  {subscription.name.slice(0, 2).toUpperCase()}
+              </div>
+          )}
         <div className="flex-1 min-w-0">
             <p className="font-medium text-neutral-900 truncate">{subscription.name}</p>
           <p className="text-sm text-neutral-500">
@@ -93,12 +112,21 @@ export function SubscriptionCard({
       onClick={onClick}
     >
       <div className="flex items-start gap-4">
-        <div
-          className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold shadow-soft"
-          style={{backgroundColor: avatarColor}}
-        >
-          {subscription.name.slice(0, 2).toUpperCase()}
-        </div>
+          {showLogo ? (
+              <img
+                  src={subscription.logoUrl ?? undefined}
+                  alt={subscription.name}
+                  className="w-12 h-12 rounded-xl object-cover shadow-soft"
+                  onError={() => setImageError(true)}
+              />
+          ) : (
+              <div
+                  className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold shadow-soft"
+                  style={{backgroundColor: avatarColor}}
+              >
+                  {subscription.name.slice(0, 2).toUpperCase()}
+              </div>
+          )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
               <h3 className="font-semibold text-neutral-900 truncate">{subscription.name}</h3>

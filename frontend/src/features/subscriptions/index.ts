@@ -12,6 +12,8 @@ export {
     PAYMENT_METHODS,
     paymentMethodOptions,
     calculateNextPaymentDate,
+    getCategoryName,
+    getPaymentMethodName,
 } from "./utils/subscription.utils";
 
 export {popularServices} from "./data/popular-services";
