@@ -467,6 +467,20 @@ O conserto foi simples, mas certeiro: adicionamos um `useRef` chamado `refreshAt
 
 ---
 
+## Correção Quentinha: CORS para Frontend em Produção
+
+Outro bug clássico de deploy: tudo funciona localmente e quebra no navegador em produção com erro de CORS. O backend não
+estava respondendo com os headers de origem permitida, então o browser bloqueava chamadas do frontend no Railway.
+
+A solução foi configurar CORS dentro do `SecurityFilterChain`, com origens vindas de ambiente (`CORS_ALLOWED_ORIGINS`)
+em vez de hardcode. Isso deixa o backend flexível para dev e produção, libera preflight `OPTIONS`, permite credenciais e
+mantém métodos/headers explícitos (`GET, POST, PUT, DELETE, PATCH, OPTIONS` e `Authorization, Content-Type`).
+
+Lição prática: quando frontend e backend estão em domínios diferentes, CORS não é detalhe opcional; é parte da
+infraestrutura da aplicação e deve ser tratado como configuração de ambiente.
+
+---
+
 ## Conclusão
 
 O Ongoing não é só um CRUD de assinaturas. É um exemplo de como estruturar uma aplicação Spring Boot moderna seguindo

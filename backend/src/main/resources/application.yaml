@@ -24,3 +24,6 @@ security:
 exchange:
   api:
     url: ${EXCHANGE_API_URL:https://api.exchangerate-api.com/v4/latest/USD}
+
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
