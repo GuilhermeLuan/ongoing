@@ -176,6 +176,7 @@ DB_PORT=5432
 DB_NAME=local_db
 DB_USER=local_user
 DB_PASSWORD=local_password
+CORS_ALLOWED_ORIGINS=http://localhost:3000,https://ongoing.up.railway.app
 ```
 
 The `ACTIVE_PROFILE` variable controls which Spring profile is used.
