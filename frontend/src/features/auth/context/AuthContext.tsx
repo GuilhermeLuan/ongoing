@@ -14,7 +14,14 @@
  * - Callback registration for api-client interceptors
  */
 
-import React, {createContext, useCallback, useEffect, useMemo, useState} from 'react';
+import React, {
+    createContext,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import {authService} from '../services/auth.service';
 import {tokenStorage} from '../utils/token-storage';
 import {registerAuthCallbacks} from '../services/api-client';
@@ -42,9 +49,10 @@ export const AuthContext = createContext<AuthContextValue | undefined>(
  * Auth Provider Component
  */
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
-                                                                          children,
-                                                                      }) => {
+                                                                           children,
+                                                                       }) => {
     const [state, setState] = useState<AuthState>(initialState);
+    const refreshAttempted = useRef(false);
 
     /**
      * Clear error message
@@ -233,6 +241,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
      * Attempts to restore session from refresh token in localStorage
      */
     useEffect(() => {
+        if (refreshAttempted.current) {
+            return;
+        }
+        refreshAttempted.current = true;
+
         const silentRefresh = async () => {
             const hasRefreshToken = tokenStorage.hasRefreshToken();
 

@@ -459,6 +459,14 @@ A arquitetura atual suporta tudo isso sem grandes refatorações. Esse é o sina
 
 ---
 
+## Correção Quentinha: Silent Refresh vs React Strict Mode
+
+Sabe aquele bug fantasma que só aparece em desenvolvimento? Descobrimos que o Next.js 14 roda o React em modo estrito, o que monta e desmonta componentes duas vezes para caçar efeitos colaterais. Nosso `AuthContext` fazia o silent refresh em um `useEffect` sem guarda. Resultado: duas requisições usando o mesmo refresh token. A primeira funcionava, a segunda tomava 401 e limpava tudo, derrubando a sessão e quebrando o `GuestRoute` (achava que ninguém estava logado).
+
+O conserto foi simples, mas certeiro: adicionamos um `useRef` chamado `refreshAttempted`. Ele garante que o silent refresh só roda uma vez, mesmo que o React tente ser esperto. Agora o usuário mantém a sessão ao recarregar a página e, se tentar acessar `/login` já logado, é redirecionado corretamente para `/dashboard`. Moral da história: em ambientes com Strict Mode, sempre trate efeitos como se fossem executados duas vezes.
+
+---
+
 ## Conclusão
 
 O Ongoing não é só um CRUD de assinaturas. É um exemplo de como estruturar uma aplicação Spring Boot moderna seguindo
