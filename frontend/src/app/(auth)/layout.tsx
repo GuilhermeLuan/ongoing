@@ -1,4 +1,5 @@
 import {Logo} from "@/components/shared";
+import {GuestRoute} from "@/components/auth";
 
 export default function AuthLayout({
                                        children,
@@ -6,6 +7,7 @@ export default function AuthLayout({
     children: React.ReactNode;
 }) {
     return (
+        <GuestRoute>
         <div className="min-h-screen flex flex-col lg:flex-row">
             {/* Branding Panel */}
             <div
@@ -36,5 +38,6 @@ export default function AuthLayout({
                 {children}
             </div>
         </div>
+        </GuestRoute>
     );
 }

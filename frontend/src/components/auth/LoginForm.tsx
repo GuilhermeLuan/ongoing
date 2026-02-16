@@ -1,7 +1,7 @@
 "use client";
 
 import {FormEvent, useState} from "react";
-import {useRouter} from "next/navigation";
+import {useRouter, useSearchParams} from "next/navigation";
 import Link from "next/link";
 import {Lock, Mail} from "lucide-react";
 import {Button, Input} from "@/components/ui";
@@ -10,6 +10,7 @@ import {useAuth} from "@/features/auth";
 
 export function LoginForm() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const {login, error, clearError} = useAuth();
 
     const [email, setEmail] = useState("");
@@ -47,7 +48,9 @@ export function LoginForm() {
 
         try {
             await login(email, password);
-            router.push("/dashboard");
+            const redirect = searchParams.get("redirect");
+            const destination = redirect && redirect.startsWith("/") ? redirect : "/dashboard";
+            router.push(destination);
         } catch {
             // Error is already set in AuthContext
         } finally {
