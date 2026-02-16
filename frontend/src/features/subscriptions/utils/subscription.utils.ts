@@ -1,4 +1,4 @@
-import type {BillingCycle, CategoryOption, Currency} from "../types/subscription.types";
+import type {BillingCycle, CategoryOption, Currency, PaymentMethodOption} from "../types/subscription.types";
 
 export const billingCycleLabels: Record<BillingCycle, string> = {
     MONTHLY: "Mensal",
@@ -35,6 +35,27 @@ export const CATEGORIES: CategoryOption[] = [
  * Category options formatted for Select component usage.
  */
 export const categoryOptions = CATEGORIES.map(({id, name}) => ({
+    value: id.toString(),
+    label: name,
+}));
+
+/**
+ * Payment method options matching the backend seed data (V1.1__insert_domains_value.sql).
+ * These are hardcoded as there's no backend endpoint for payment methods.
+ */
+export const PAYMENT_METHODS: PaymentMethodOption[] = [
+    {id: 1, name: "Cartão de Crédito"},
+    {id: 2, name: "Cartão de Débito"},
+    {id: 3, name: "PIX"},
+    {id: 4, name: "Boleto"},
+    {id: 5, name: "PayPal"},
+    {id: 6, name: "Débito Direto"},
+];
+
+/**
+ * Payment method options formatted for Select component usage.
+ */
+export const paymentMethodOptions = PAYMENT_METHODS.map(({id, name}) => ({
     value: id.toString(),
     label: name,
 }));

@@ -75,3 +75,8 @@ export interface CategoryOption {
     id: number;
     name: string;
 }
+
+export interface PaymentMethodOption {
+    id: number;
+    name: string;
+}

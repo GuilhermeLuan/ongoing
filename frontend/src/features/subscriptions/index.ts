@@ -9,6 +9,8 @@ export {
     getDaysUntilBilling,
     CATEGORIES,
     categoryOptions,
+    PAYMENT_METHODS,
+    paymentMethodOptions,
     calculateNextPaymentDate,
 } from "./utils/subscription.utils";
 
@@ -23,4 +25,5 @@ export type {
     SpringPage,
     PopularService,
     CategoryOption,
+    PaymentMethodOption,
 } from "./types/subscription.types";

@@ -12,6 +12,7 @@ import {
     categoryOptions,
     type Currency,
     currencyLabels,
+    paymentMethodOptions,
     type PopularService,
     type SubscriptionRequest,
     type SubscriptionResponse,
@@ -32,6 +33,7 @@ interface FormValues {
     value: string;
     startDate: string;
     categoryId: string;
+    paymentMethodId: string;
     currency: Currency;
     billingCycle: BillingCycle;
     active: boolean;
@@ -80,6 +82,7 @@ const getInitialValues = (
             value: subscription.value.toString(),
             startDate: subscription.startDate,
             categoryId: subscription.categoryId?.toString() ?? "",
+            paymentMethodId: subscription.paymentMethodId?.toString() ?? "",
             currency: subscription.currency,
             billingCycle: subscription.billingCycle,
             active: subscription.active,
@@ -97,6 +100,7 @@ const getInitialValues = (
             value: prefill.defaultValue.toString(),
             startDate: today,
             categoryId: prefill.categoryId.toString(),
+            paymentMethodId: "",
             currency: prefill.defaultCurrency,
             billingCycle: prefill.defaultBillingCycle,
             active: true,
@@ -111,6 +115,7 @@ const getInitialValues = (
         value: "",
         startDate: today,
         categoryId: "",
+        paymentMethodId: "",
         currency: "BRL",
         billingCycle: "MONTHLY",
         active: true,
@@ -201,6 +206,7 @@ export function SubscriptionForm({
             notifyUser: values.notifyUser,
             logoUrl: values.logoUrl.trim() || undefined,
             categoryId: values.categoryId ? Number(values.categoryId) : undefined,
+            paymentMethodId: values.paymentMethodId ? Number(values.paymentMethodId) : undefined,
         });
     };
 
@@ -313,16 +319,26 @@ export function SubscriptionForm({
                         />
                     </div>
 
-                    {/* Ciclo de cobrança */}
-                    <Select
-                        label="Ciclo de cobrança"
-                        options={billingCycleOptions}
-                        value={values.billingCycle}
-                        onChange={(event) =>
-                            setValue("billingCycle", event.target.value as BillingCycle)
-                        }
-                        error={errors.billingCycle}
-                    />
+                    {/* Ciclo de cobrança + Método de Pagamento */}
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <Select
+                            label="Ciclo de cobrança"
+                            options={billingCycleOptions}
+                            value={values.billingCycle}
+                            onChange={(event) =>
+                                setValue("billingCycle", event.target.value as BillingCycle)
+                            }
+                            error={errors.billingCycle}
+                        />
+
+                        <Select
+                            label="Método de Pagamento"
+                            options={paymentMethodOptions}
+                            value={values.paymentMethodId}
+                            onChange={(event) => setValue("paymentMethodId", event.target.value)}
+                            placeholder="Selecione um método"
+                        />
+                    </div>
 
                     {/* Logo URL - only show for custom services */}
                     {!isPopularService && (
