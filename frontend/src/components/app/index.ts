@@ -7,3 +7,6 @@ export {SubscriptionForm} from "./SubscriptionForm";
 export {SubscriptionsPageContent} from "./SubscriptionsPageContent";
 export { SidebarProvider, useSidebar } from "./SidebarContext";
 export {ServicePicker} from "./ServicePicker";
+export {SubscriptionHeader} from "./SubscriptionHeader";
+export {AppearanceEditor} from "./AppearanceEditor";
+export {ColorPicker} from "./ColorPicker";

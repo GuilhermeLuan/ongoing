@@ -14,6 +14,7 @@ export const popularServices: PopularService[] = [
         defaultBillingCycle: "MONTHLY",
         defaultValue: 39.9,
         defaultCurrency: "BRL",
+        brandColor: "#E50914",
     },
     {
         name: "Spotify",
@@ -22,6 +23,7 @@ export const popularServices: PopularService[] = [
         defaultBillingCycle: "MONTHLY",
         defaultValue: 21.9,
         defaultCurrency: "BRL",
+        brandColor: "#1DB954",
     },
     {
         name: "Disney+",
@@ -30,6 +32,7 @@ export const popularServices: PopularService[] = [
         defaultBillingCycle: "MONTHLY",
         defaultValue: 33.9,
         defaultCurrency: "BRL",
+        brandColor: "#113CCF",
     },
     {
         name: "YouTube Premium",
@@ -38,6 +41,7 @@ export const popularServices: PopularService[] = [
         defaultBillingCycle: "MONTHLY",
         defaultValue: 24.9,
         defaultCurrency: "BRL",
+        brandColor: "#FF0000",
     },
     {
         name: "Amazon Prime",
@@ -46,6 +50,7 @@ export const popularServices: PopularService[] = [
         defaultBillingCycle: "MONTHLY",
         defaultValue: 14.9,
         defaultCurrency: "BRL",
+        brandColor: "#00A8E1",
     },
     {
         name: "Xbox Game Pass",
@@ -54,6 +59,7 @@ export const popularServices: PopularService[] = [
         defaultBillingCycle: "MONTHLY",
         defaultValue: 39.99,
         defaultCurrency: "BRL",
+        brandColor: "#107C10",
     },
     {
         name: "iCloud",
@@ -62,6 +68,7 @@ export const popularServices: PopularService[] = [
         defaultBillingCycle: "MONTHLY",
         defaultValue: 9.9,
         defaultCurrency: "BRL",
+        brandColor: "#3693F3",
     },
     {
         name: "ChatGPT Plus",
@@ -70,6 +77,7 @@ export const popularServices: PopularService[] = [
         defaultBillingCycle: "MONTHLY",
         defaultValue: 20.0,
         defaultCurrency: "USD",
+        brandColor: "#10A37F",
     },
     {
         name: "Adobe Creative Cloud",
@@ -78,6 +86,7 @@ export const popularServices: PopularService[] = [
         defaultBillingCycle: "MONTHLY",
         defaultValue: 192.91,
         defaultCurrency: "BRL",
+        brandColor: "#FF0000",
     },
     {
         name: "HBO Max",
@@ -86,6 +95,7 @@ export const popularServices: PopularService[] = [
         defaultBillingCycle: "MONTHLY",
         defaultValue: 34.9,
         defaultCurrency: "BRL",
+        brandColor: "#B100CD",
     },
     {
         name: "Duolingo",
@@ -94,6 +104,7 @@ export const popularServices: PopularService[] = [
         defaultBillingCycle: "MONTHLY",
         defaultValue: 39.9,
         defaultCurrency: "BRL",
+        brandColor: "#58CC02",
     },
     {
         name: "Notion",
@@ -102,6 +113,7 @@ export const popularServices: PopularService[] = [
         defaultBillingCycle: "MONTHLY",
         defaultValue: 10.0,
         defaultCurrency: "USD",
+        brandColor: "#000000",
     },
     {
         name: "GitHub Pro",
@@ -110,6 +122,7 @@ export const popularServices: PopularService[] = [
         defaultBillingCycle: "MONTHLY",
         defaultValue: 4.0,
         defaultCurrency: "USD",
+        brandColor: "#181717",
     },
     {
         name: "Figma Professional",
@@ -118,6 +131,7 @@ export const popularServices: PopularService[] = [
         defaultBillingCycle: "MONTHLY",
         defaultValue: 12.0,
         defaultCurrency: "USD",
+        brandColor: "#F24E1E",
     },
     {
         name: "Canva Pro",
@@ -126,6 +140,7 @@ export const popularServices: PopularService[] = [
         defaultBillingCycle: "YEARLY",
         defaultValue: 549.9,
         defaultCurrency: "BRL",
+        brandColor: "#00C4CC",
     },
     {
         name: "Google One",
@@ -134,5 +149,6 @@ export const popularServices: PopularService[] = [
         defaultBillingCycle: "MONTHLY",
         defaultValue: 6.99,
         defaultCurrency: "BRL",
+        brandColor: "#4285F4",
     },
 ];

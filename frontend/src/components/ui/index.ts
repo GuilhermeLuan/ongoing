@@ -8,3 +8,4 @@ export { Select } from "./Select";
 export { Avatar } from "./Avatar";
 export { Skeleton } from "./Skeleton";
 export {Modal} from "./Modal";
+export {Toggle} from "./Toggle";

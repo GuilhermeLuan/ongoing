@@ -68,6 +68,7 @@ export interface PopularService {
     defaultBillingCycle: BillingCycle;
     defaultValue: number;
     defaultCurrency: Currency;
+    brandColor?: string;
 }
 
 export interface CategoryOption {

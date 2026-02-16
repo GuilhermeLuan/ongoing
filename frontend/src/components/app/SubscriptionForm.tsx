@@ -1,8 +1,10 @@
 "use client";
 
 import {useState} from "react";
-import {ArrowLeft} from "lucide-react";
-import {Button, Input, Select} from "@/components/ui";
+import {ArrowLeft, Bell} from "lucide-react";
+import {Button, Input, Select, Toggle} from "@/components/ui";
+import {SubscriptionHeader} from "./SubscriptionHeader";
+import {AppearanceEditor} from "./AppearanceEditor";
 import {
     type BillingCycle,
     billingCycleLabels,
@@ -37,6 +39,19 @@ interface FormValues {
     logoUrl: string;
 }
 
+const PRESET_COLORS = [
+    "#E50914", "#1DB954", "#5865F2", "#0078D4",
+    "#FF6600", "#10A37F", "#FF0080", "#FFC107",
+    "#9C27B0", "#00BCD4", "#4CAF50", "#6B7280",
+];
+
+const getDefaultColor = (name: string): string => {
+    const hash = name.split("").reduce((acc, char) => {
+        return char.charCodeAt(0) + ((acc << 5) - acc);
+    }, 0);
+    return PRESET_COLORS[Math.abs(hash) % PRESET_COLORS.length];
+};
+
 const billingCycleOptions = Object.entries(billingCycleLabels).map(
     ([value, label]) => ({value, label})
 );
@@ -46,11 +61,18 @@ const currencyOptions = Object.entries(currencyLabels).map(([value, label]) => (
     label,
 }));
 
+const getTodayDate = (): string => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+};
+
 const getInitialValues = (
     subscription?: SubscriptionResponse,
     prefill?: PopularService
 ): FormValues => {
-    // If editing existing subscription
     if (subscription) {
         return {
             name: subscription.name,
@@ -66,13 +88,14 @@ const getInitialValues = (
         };
     }
 
-    // If pre-filling from popular service
+    const today = getTodayDate();
+
     if (prefill) {
         return {
             name: prefill.name,
             description: "",
             value: prefill.defaultValue.toString(),
-            startDate: "",
+            startDate: today,
             categoryId: prefill.categoryId.toString(),
             currency: prefill.defaultCurrency,
             billingCycle: prefill.defaultBillingCycle,
@@ -82,12 +105,11 @@ const getInitialValues = (
         };
     }
 
-    // Default empty form
     return {
         name: "",
         description: "",
         value: "",
-        startDate: "",
+        startDate: today,
         categoryId: "",
         currency: "BRL",
         billingCycle: "MONTHLY",
@@ -109,6 +131,15 @@ export function SubscriptionForm({
         getInitialValues(subscription, prefill)
     );
     const [errors, setErrors] = useState<Partial<Record<keyof FormValues, string>>>({});
+
+    const [editingAppearance, setEditingAppearance] = useState(false);
+    const [customization, setCustomization] = useState({
+        name: prefill?.name || subscription?.name || "",
+        avatarColor: prefill?.brandColor || getDefaultColor(prefill?.name || subscription?.name || ""),
+    });
+
+    const isPopularService = !!prefill?.brandColor;
+    const isEditing = !!subscription;
 
     const validate = (): boolean => {
         const nextErrors: Partial<Record<keyof FormValues, string>> = {};
@@ -153,15 +184,13 @@ export function SubscriptionForm({
             return;
         }
 
-        // Calculate nextPaymentDate from startDate and billingCycle
-        // Backend recalculates this anyway, but it satisfies the @NotNull DTO requirement
         const nextPaymentDate = calculateNextPaymentDate(
             values.startDate,
             values.billingCycle
         );
 
         await onSubmit({
-            name: values.name.trim(),
+            name: customization.name || values.name.trim(),
             description: values.description.trim() || undefined,
             value: Number(values.value),
             startDate: values.startDate,
@@ -179,9 +208,15 @@ export function SubscriptionForm({
         setValues((prev) => ({...prev, [key]: value}));
     };
 
+    const handleAppearanceSave = (name: string, color: string) => {
+        setCustomization({name, avatarColor: color});
+        setValue("name", name);
+        setEditingAppearance(false);
+    };
+
     return (
         <form className="space-y-4" onSubmit={handleSubmit}>
-            {/* Back Button (only shown when onBack is provided) */}
+            {/* Back Button */}
             {onBack && (
                 <button
                     type="button"
@@ -193,116 +228,153 @@ export function SubscriptionForm({
                 </button>
             )}
 
-            {/* Nome */}
-            <Input
-                label="Nome"
-                value={values.name}
-                onChange={(event) => setValue("name", event.target.value)}
-                error={errors.name}
-                maxLength={255}
-            />
-
-            {/* Descrição */}
-            <Input
-                label="Descrição"
-                value={values.description}
-                onChange={(event) => setValue("description", event.target.value)}
-                error={errors.description}
-                maxLength={255}
-            />
-
-            {/* Valor + Moeda */}
-            <div className="grid gap-4 sm:grid-cols-2">
-                <Input
-                    label="Valor"
-                    type="number"
-                    min="0.01"
-                    step="0.01"
-                    value={values.value}
-                    onChange={(event) => setValue("value", event.target.value)}
-                    error={errors.value}
-                />
-
-                <Select
-                    label="Moeda"
-                    options={currencyOptions}
-                    value={values.currency}
-                    onChange={(event) => setValue("currency", event.target.value as Currency)}
-                />
-            </div>
-
-            {/* Data de início + Categoria */}
-            <div className="grid gap-4 sm:grid-cols-2">
-                <Input
-                    label="Data de início"
-                    type="date"
-                    value={values.startDate}
-                    onChange={(event) => setValue("startDate", event.target.value)}
-                    error={errors.startDate}
-                />
-
-                <Select
-                    label="Categoria"
-                    options={categoryOptions}
-                    value={values.categoryId}
-                    onChange={(event) => setValue("categoryId", event.target.value)}
-                    placeholder="Selecione uma categoria"
-                />
-            </div>
-
-            {/* Ciclo de cobrança */}
-            <Select
-                label="Ciclo de cobrança"
-                options={billingCycleOptions}
-                value={values.billingCycle}
-                onChange={(event) =>
-                    setValue("billingCycle", event.target.value as BillingCycle)
-                }
-                error={errors.billingCycle}
-            />
-
-            {/* Logo URL */}
-            <Input
-                label="Logo URL"
-                type="url"
-                value={values.logoUrl}
-                onChange={(event) => setValue("logoUrl", event.target.value)}
-                error={errors.logoUrl}
-                maxLength={255}
-            />
-
-            {/* Checkboxes: Ativo + Notificar */}
-            <div className="grid gap-3 sm:grid-cols-2">
-                <label className="flex items-center gap-2 text-sm text-neutral-700">
-                    <input
-                        type="checkbox"
-                        checked={values.active}
-                        onChange={(event) => setValue("active", event.target.checked)}
-                        className="h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
+            {/* Subscription Header / Appearance Editor */}
+            {(customization.name || values.name) && (
+                editingAppearance ? (
+                    <AppearanceEditor
+                        name={customization.name || values.name}
+                        logoUrl={values.logoUrl}
+                        avatarColor={customization.avatarColor}
+                        onSave={handleAppearanceSave}
+                        onCancel={() => setEditingAppearance(false)}
                     />
-                    Assinatura ativa
-                </label>
-
-                <label className="flex items-center gap-2 text-sm text-neutral-700">
-                    <input
-                        type="checkbox"
-                        checked={values.notifyUser}
-                        onChange={(event) => setValue("notifyUser", event.target.checked)}
-                        className="h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
+                ) : (
+                    <SubscriptionHeader
+                        name={customization.name || values.name}
+                        logoUrl={values.logoUrl}
+                        avatarColor={customization.avatarColor}
+                        onEdit={() => setEditingAppearance(true)}
                     />
-                    Notificar usuário
-                </label>
-            </div>
+                )
+            )}
 
-            {/* Action Buttons */}
-            <div className="flex justify-end gap-3 pt-2">
-                <Button type="button" variant="ghost" onClick={onCancel} disabled={isSubmitting}>
-                    Cancelar
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? "Salvando..." : subscription ? "Salvar alterações" : "Criar assinatura"}
-                </Button>
-            </div>
+            {/* Form fields - hidden while editing appearance */}
+            {!editingAppearance && (
+                <>
+                    {/* Nome */}
+                    <Input
+                        label="Nome"
+                        value={values.name}
+                        onChange={(event) => {
+                            setValue("name", event.target.value);
+                            if (!customization.name || customization.name === values.name) {
+                                setCustomization((prev) => ({...prev, name: event.target.value}));
+                            }
+                        }}
+                        error={errors.name}
+                        maxLength={255}
+                    />
+
+                    {/* Descrição */}
+                    <Input
+                        label="Descrição"
+                        value={values.description}
+                        onChange={(event) => setValue("description", event.target.value)}
+                        error={errors.description}
+                        maxLength={255}
+                    />
+
+                    {/* Valor + Moeda */}
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <Input
+                            label="Valor"
+                            type="number"
+                            min="0.01"
+                            step="0.01"
+                            value={values.value}
+                            onChange={(event) => setValue("value", event.target.value)}
+                            error={errors.value}
+                        />
+
+                        <Select
+                            label="Moeda"
+                            options={currencyOptions}
+                            value={values.currency}
+                            onChange={(event) => setValue("currency", event.target.value as Currency)}
+                        />
+                    </div>
+
+                    {/* Data de início + Categoria */}
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <Input
+                            label="Data de início"
+                            type="date"
+                            value={values.startDate}
+                            onChange={(event) => setValue("startDate", event.target.value)}
+                            error={errors.startDate}
+                        />
+
+                        <Select
+                            label="Categoria"
+                            options={categoryOptions}
+                            value={values.categoryId}
+                            onChange={(event) => setValue("categoryId", event.target.value)}
+                            placeholder="Selecione uma categoria"
+                        />
+                    </div>
+
+                    {/* Ciclo de cobrança */}
+                    <Select
+                        label="Ciclo de cobrança"
+                        options={billingCycleOptions}
+                        value={values.billingCycle}
+                        onChange={(event) =>
+                            setValue("billingCycle", event.target.value as BillingCycle)
+                        }
+                        error={errors.billingCycle}
+                    />
+
+                    {/* Logo URL - only show for custom services */}
+                    {!isPopularService && (
+                        <Input
+                            label="Logo URL"
+                            type="url"
+                            value={values.logoUrl}
+                            onChange={(event) => setValue("logoUrl", event.target.value)}
+                            error={errors.logoUrl}
+                            maxLength={255}
+                        />
+                    )}
+
+                    {/* Assinatura ativa - only when editing existing */}
+                    {isEditing && (
+                        <label className="flex items-center gap-2 text-sm text-neutral-700">
+                            <input
+                                type="checkbox"
+                                checked={values.active}
+                                onChange={(event) => setValue("active", event.target.checked)}
+                                className="h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
+                            />
+                            Assinatura ativa
+                        </label>
+                    )}
+
+                    {/* Lembrete de renovação */}
+                    <div
+                        className="flex items-center justify-between rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3">
+                        <div className="flex items-center gap-3">
+                            <Bell className="w-4 h-4 text-neutral-500"/>
+                            <span className="text-sm font-medium text-neutral-700">
+                                Lembrete de renovação
+                            </span>
+                        </div>
+                        <Toggle
+                            checked={values.notifyUser}
+                            onChange={(checked) => setValue("notifyUser", checked)}
+                        />
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex justify-end gap-3 pt-2">
+                        <Button type="button" variant="ghost" onClick={onCancel} disabled={isSubmitting}>
+                            Cancelar
+                        </Button>
+                        <Button type="submit" disabled={isSubmitting}>
+                            {isSubmitting ? "Salvando..." : isEditing ? "Salvar alterações" : "Criar assinatura"}
+                        </Button>
+                    </div>
+                </>
+            )}
         </form>
     );
 }
