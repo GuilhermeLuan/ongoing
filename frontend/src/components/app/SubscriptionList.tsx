@@ -1,57 +1,61 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Input, Select } from "@/components/ui";
-import { SubscriptionCard } from "./SubscriptionCard";
-import {
-  Subscription,
-  categoryLabels,
-  statusLabels,
-} from "@/lib/mock-data";
+import {useState} from "react";
+import {Input, Select} from "@/components/ui";
+import {type SubscriptionFilters, type SubscriptionResponse,} from "@/features/subscriptions";
+import {SubscriptionCard} from "./SubscriptionCard";
 
 interface SubscriptionListProps {
-  subscriptions: Subscription[];
+    subscriptions: SubscriptionResponse[];
   isLoading?: boolean;
+    currentPage: number;
+    totalPages: number;
+    onPageChange: (page: number) => void;
+    onFilterChange: (filters: Partial<SubscriptionFilters>) => void;
+    onEdit: (subscription: SubscriptionResponse) => void;
+    onDelete: (subscription: SubscriptionResponse) => void;
 }
-
-const categoryOptions = [
-  { value: "", label: "Todas as categorias" },
-  ...Object.entries(categoryLabels).map(([value, label]) => ({ value, label })),
-];
 
 const statusOptions = [
   { value: "", label: "Todos os status" },
-  ...Object.entries(statusLabels).map(([value, label]) => ({ value, label })),
+    {value: "true", label: "Ativas"},
+    {value: "false", label: "Inativas"},
 ];
 
 export function SubscriptionList({
   subscriptions,
   isLoading = false,
+                                     currentPage,
+                                     totalPages,
+                                     onPageChange,
+                                     onFilterChange,
+                                     onEdit,
+                                     onDelete,
 }: SubscriptionListProps) {
   const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
-  const filteredSubscriptions = useMemo(() => {
-    return subscriptions.filter((sub) => {
-      const matchesSearch = sub.name
-        .toLowerCase()
-        .includes(search.toLowerCase());
-      const matchesCategory =
-        !categoryFilter || sub.category === categoryFilter;
-      const matchesStatus = !statusFilter || sub.status === statusFilter;
-      return matchesSearch && matchesCategory && matchesStatus;
-    });
-  }, [subscriptions, search, categoryFilter, statusFilter]);
+    const handleSearchChange = (value: string) => {
+        setSearch(value);
+        onFilterChange({name: value || undefined});
+    };
+
+    const handleStatusChange = (value: string) => {
+        setStatusFilter(value);
+
+        if (value === "") {
+            onFilterChange({active: undefined});
+            return;
+        }
+
+        onFilterChange({active: value === "true"});
+    };
 
   if (isLoading) {
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {[...Array(6)].map((_, i) => (
-          <div
-            key={i}
-            className="h-48 rounded-xl bg-neutral-100 animate-pulse"
-          />
+            <div key={i} className="h-48 rounded-xl bg-neutral-100 animate-pulse"/>
         ))}
       </div>
     );
@@ -59,13 +63,12 @@ export function SubscriptionList({
 
   return (
     <div className="space-y-6">
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1">
           <Input
             placeholder="Buscar assinatura..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(event) => handleSearchChange(event.target.value)}
             icon={
               <svg
                 className="w-4 h-4"
@@ -83,24 +86,17 @@ export function SubscriptionList({
             }
           />
         </div>
-        <div className="w-full sm:w-48">
-          <Select
-            options={categoryOptions}
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-          />
-        </div>
+
         <div className="w-full sm:w-40">
           <Select
             options={statusOptions}
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(event) => handleStatusChange(event.target.value)}
           />
         </div>
       </div>
 
-      {/* List */}
-      {filteredSubscriptions.length === 0 ? (
+        {subscriptions.length === 0 ? (
         <div className="text-center py-12">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-neutral-100 flex items-center justify-center">
             <svg
@@ -125,14 +121,42 @@ export function SubscriptionList({
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredSubscriptions.map((subscription) => (
-            <SubscriptionCard
-              key={subscription.id}
-              subscription={subscription}
-            />
-          ))}
-        </div>
+            <>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {subscriptions.map((subscription) => (
+                        <SubscriptionCard
+                            key={subscription.id}
+                            subscription={subscription}
+                            onEdit={onEdit}
+                            onDelete={onDelete}
+                        />
+                    ))}
+                </div>
+
+                <div className="flex items-center justify-between">
+                    <button
+                        type="button"
+                        className="px-3 py-2 rounded-lg border border-neutral-200 text-sm text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => onPageChange(currentPage - 1)}
+                        disabled={currentPage <= 1}
+                    >
+                        Anterior
+                    </button>
+
+                    <p className="text-sm text-neutral-500">
+                        Página {currentPage} de {Math.max(totalPages, 1)}
+                    </p>
+
+                    <button
+                        type="button"
+                        className="px-3 py-2 rounded-lg border border-neutral-200 text-sm text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => onPageChange(currentPage + 1)}
+                        disabled={currentPage >= Math.max(totalPages, 1)}
+                    >
+                        Próximo
+                    </button>
+                </div>
+            </>
       )}
     </div>
   );

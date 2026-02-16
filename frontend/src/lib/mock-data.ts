@@ -1,3 +1,5 @@
+import type {SubscriptionResponse} from "@/features/subscriptions/types/subscription.types";
+
 export type Category =
   | "VIDEO_STREAMING"
   | "MUSIC"
@@ -245,4 +247,25 @@ export function formatDate(dateString: string): string {
     day: "2-digit",
     month: "short",
   });
+}
+
+export function toSubscriptionResponse(
+    subscription: Subscription
+): SubscriptionResponse {
+    return {
+        id: subscription.id,
+        name: subscription.name,
+        description: categoryLabels[subscription.category],
+        value: subscription.price,
+        startDate: subscription.nextBilling,
+        nextPaymentDate: subscription.nextBilling,
+        active: subscription.status === "ACTIVE",
+        notifyUser: true,
+        currency: "BRL",
+        logoUrl: subscription.logo ?? null,
+        categoryId: null,
+        paymentMethodId: null,
+        billingCycle: subscription.billingCycle,
+        subscriptionTypeId: null,
+    };
 }
