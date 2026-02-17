@@ -8,10 +8,11 @@ export default function AuthLayout({
 }) {
     return (
         <GuestRoute>
-        <div className="min-h-screen flex flex-col lg:flex-row">
+            <div
+                className="min-h-[100dvh] flex flex-col lg:flex-row bg-gradient-to-br from-primary-500 via-primary-600 to-accent-500">
             {/* Branding Panel */}
             <div
-                className="relative flex items-center justify-center bg-gradient-to-br from-primary-500 via-primary-600 to-accent-500 lg:w-1/2 px-8 py-12 lg:py-0 overflow-hidden">
+                className="relative flex items-center justify-center bg-transparent lg:w-1/2 px-8 py-12 lg:py-0 overflow-hidden">
                 {/* Decorative circles */}
                 <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-white/10 blur-3xl"/>
                 <div

@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 :root {
+    color-scheme: light;
   --background: #ffffff;
   --foreground: #171717;
 
@@ -21,13 +22,6 @@
   --gradient-accent: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
   --gradient-hero: linear-gradient(180deg, #f0fdf4 0%, #ffffff 100%);
   --gradient-text: linear-gradient(135deg, #22c55e 0%, #8b5cf6 100%);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 @layer base {

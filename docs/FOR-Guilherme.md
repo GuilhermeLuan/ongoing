@@ -505,6 +505,40 @@ fontes de custo em camadas (layout, animação, GPU e comportamento de scroll).
 
 ---
 
+## Ajuste fino: Menu hambúrguer da Landing no iOS
+
+Depois das otimizações mobile, apareceu um detalhe chato na landing em iPhone: ao abrir o menu hambúrguer, a sensação
+visual ainda ficava ruim e os CTAs ("Entrar" e "Começar grátis") podiam ficar "colados".
+
+A correção foi simples e certeira no `Header`:
+
+- header mobile passa a manter fundo sólido branco quando o menu está aberto (evita contraste ruim no topo);
+- dropdown mobile virou um painel com espaçamento/safe-area melhor no rodapé;
+- links dos CTAs viraram blocos (`className="block"`), com `flex-col + gap`, garantindo separação consistente entre os
+  botões.
+
+Lição prática: em UI mobile, detalhes de `display` (inline vs block) e estado visual do header aberto/fechado impactam
+mais do que parece — especialmente no Safari iOS.
+
+---
+
+## Ajuste global: fundo preto no iOS (login/register/dashboard)
+
+Na sequência, apareceu um comportamento clássico de Safari em iPhone: mesmo com telas claras, alguns contextos ainda
+exibiam fundo preto (principalmente em login/register e em transições).
+
+Correção aplicada em camadas:
+
+- forçamos `color-scheme: light` no `:root` e `themeColor: "#ffffff"` no `viewport` da aplicação;
+- removemos a troca automática para variáveis escuras por `prefers-color-scheme: dark`;
+- ajustamos wrappers principais para `min-h-[100dvh]` (auth/app/loading), reduzindo artefatos de viewport no iOS.
+- na autenticação, o container mobile também passou a carregar o gradiente da marca, para manter continuidade visual no
+  topo.
+
+Lição prática: no iOS, o problema nem sempre é "a tela". Muitas vezes é combinação de color scheme + viewport dinâmica.
+
+---
+
 ## Conclusão
 
 O Ongoing não é só um CRUD de assinaturas. É um exemplo de como estruturar uma aplicação Spring Boot moderna seguindo
