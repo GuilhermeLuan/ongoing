@@ -15,7 +15,7 @@ import { useAuth } from '@/features/auth';
 
 export function DashboardContent() {
   const { dashboard, isLoading, error } = useDashboard();
-  const { subscriptions } = useSubscriptions();
+  const { subscriptions, page } = useSubscriptions();
   const { user } = useAuth();
 
   // Show loading state
@@ -66,14 +66,14 @@ export function DashboardContent() {
   }
 
   // Get upcoming billings from subscriptions
-  const upcomingBillings = subscriptions.data.content
-    .filter(sub => sub.active)
+  const upcomingBillings = subscriptions
+    .filter((sub) => sub.active)
     .sort((a, b) => new Date(a.nextPaymentDate).getTime() - new Date(b.nextPaymentDate).getTime())
     .slice(0, 5);
 
   // Calculate stats from subscriptions
-  const activeCount = subscriptions.data.content.filter(sub => sub.active).length;
-  const totalCount = subscriptions.data.totalElements;
+  const activeCount = subscriptions.filter((sub) => sub.active).length;
+  const totalCount = page?.totalElements || 0;
 
   // Get next billing info
   const nextSubscription = upcomingBillings[0];
@@ -84,7 +84,7 @@ export function DashboardContent() {
   // Count subscriptions expiring this week
   const weekFromNow = new Date();
   weekFromNow.setDate(weekFromNow.getDate() + 7);
-  const expiringThisWeek = subscriptions.data.content.filter(sub => {
+  const expiringThisWeek = subscriptions.filter((sub) => {
     const billingDate = new Date(sub.nextPaymentDate);
     return sub.active && billingDate <= weekFromNow && billingDate >= new Date();
   }).length;
