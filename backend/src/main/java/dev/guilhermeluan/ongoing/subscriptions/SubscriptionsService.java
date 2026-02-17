@@ -6,7 +6,6 @@ import dev.guilhermeluan.ongoing.subscriptions.entities.BillingCycle;
 import dev.guilhermeluan.ongoing.subscriptions.entities.Subscriptions;
 import dev.guilhermeluan.ongoing.user.User;
 import dev.guilhermeluan.ongoing.user.UserRepository;
-import dev.guilhermeluan.ongoing.user.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -14,13 +13,15 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class SubscriptionsService {
     private final SubscriptionsRepository subscriptionsRepository;
     private final UserRepository userRepository;
 
-    public SubscriptionsService(SubscriptionsRepository subscriptionsRepository, UserService userService, UserRepository userRepository) {
+    public SubscriptionsService(SubscriptionsRepository subscriptionsRepository, UserRepository userRepository) {
         this.subscriptionsRepository = subscriptionsRepository;
         this.userRepository = userRepository;
     }
@@ -87,5 +88,10 @@ public class SubscriptionsService {
             case WEEKLY -> lastBillingDate.plusWeeks(1);
             case BIWEEKLY -> lastBillingDate.plusWeeks(2);
         };
+    }
+
+    public Map<User, List<Subscriptions>> findRenewalSubscriptionsGroupedByUser(LocalDate date) {
+        List<Subscriptions> subscriptions = subscriptionsRepository.findByNextPaymentDateAndActiveAndNotify(date);
+        return subscriptions.stream().collect(Collectors.groupingBy(Subscriptions::getUser));
     }
 }
