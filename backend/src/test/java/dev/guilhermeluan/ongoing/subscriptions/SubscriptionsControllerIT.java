@@ -313,6 +313,69 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
     }
 
     @Test
+    void update_ShouldChangeRelationships_WhenCategoryAndPaymentMethodChange() {
+        // Arrange: Create subscription with category 1 and payment method 1
+        Subscriptions subscription = subscriptionsRepository.save(
+                Subscriptions.builder()
+                        .name("Netflix")
+                        .description("Netflix Basic")
+                        .value(new BigDecimal("39.90"))
+                        .startDate(LocalDate.now())
+                        .nextPaymentDate(LocalDate.now().plusMonths(1))
+                        .billingCycle(BillingCycle.MONTHLY)
+                        .currency(Currency.BRL)
+                        .notify(true)
+                        .active(true)
+                        .category(Category.builder().id(1L).build())  // Category 1
+                        .paymentMethod(dev.guilhermeluan.ongoing.subscriptions.entities.PaymentMethod.builder().id(1L).build())  // Payment Method 1
+                        .subscriptionType(dev.guilhermeluan.ongoing.subscriptions.entities.SubscriptionType.builder().id(1L).build())
+                        .user(authenticatedUser)
+                        .build()
+        );
+
+        // Act: Update to category 2 and payment method 2 (CHANGES!)
+        SubscriptionRequestDto updateRequest = new SubscriptionRequestDto(
+                "Netflix Premium",
+                "Netflix Premium Plan",
+                new BigDecimal("55.90"),
+                subscription.getStartDate(),
+                subscription.getNextPaymentDate(),
+                true,
+                true,
+                Currency.BRL,
+                null,
+                2L,  // Change category from 1 to 2
+                2L,  // Change payment method from 1 to 2
+                BillingCycle.MONTHLY,
+                1L
+        );
+
+        String response = given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + authToken)
+                .body(updateRequest)
+                .when().put(API_URL + "/{id}", subscription.getId())
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .log().all()
+                .extract().body().asString();
+
+        // Assert: Verify the response
+        assertThatJson(response).node("id").isNotNull().isNumber();
+        assertThatJson(response).node("name").isEqualTo("Netflix Premium");
+        assertThatJson(response).node("categoryId").isEqualTo(2);
+        assertThatJson(response).node("paymentMethodId").isEqualTo(2);
+
+        // Assert: Verify in database that relationships actually changed
+        Subscriptions updatedSubscription = subscriptionsRepository.findById(subscription.getId()).orElseThrow();
+        assertThat(updatedSubscription.getName()).isEqualTo("Netflix Premium");
+        assertThat(updatedSubscription.getCategory()).isNotNull();
+        assertThat(updatedSubscription.getCategory().getId()).isEqualTo(2L);  // Changed from 1 to 2
+        assertThat(updatedSubscription.getPaymentMethod()).isNotNull();
+        assertThat(updatedSubscription.getPaymentMethod().getId()).isEqualTo(2L);  // Changed from 1 to 2
+        assertThat(updatedSubscription.getValue()).isEqualByComparingTo(new BigDecimal("55.90"));
+    }
+
+    @Test
     void delete_ShouldThrowNotFoundException_WhenSubscriptionIsNotFound() {
 
         long id = 99L;
