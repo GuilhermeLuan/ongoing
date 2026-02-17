@@ -121,20 +121,34 @@ export const decodeToken = (token: string): JwtPayload | null => {
 /**
  * Extract User object from JWT access token
  * @param accessToken - JWT access token
+ * @param userData - Optional user data from auth response
  * @returns User object or null if invalid
  */
-export const getUserFromToken = (accessToken: string): User | null => {
+export const getUserFromToken = (accessToken: string, userData?: AuthResponse['user']): User | null => {
     const payload = decodeToken(accessToken);
 
     if (!payload) {
         return null;
     }
 
+    // If user data from response is provided, use it (includes onboardingCompleted)
+    if (userData) {
+        return {
+            id: userData.id,
+            name: userData.name,
+            email: userData.email,
+            role: payload.role,
+            onboardingCompleted: userData.onboardingCompleted,
+        };
+    }
+
+    // Fallback to JWT payload only (for backward compatibility)
     return {
         id: payload.userId,
         name: payload.name,
         email: payload.sub, // Subject is the email
         role: payload.role,
+        onboardingCompleted: false, // Default value when not in JWT
     };
 };
 
