@@ -20,6 +20,8 @@ public record SubscriptionResponseDto(
         Long categoryId,
         Long paymentMethodId,
         BillingCycle billingCycle,
-        Long subscriptionTypeId
+        Long subscriptionTypeId,
+        String categoryName,
+        String paymentMethodName
 ) {
 }

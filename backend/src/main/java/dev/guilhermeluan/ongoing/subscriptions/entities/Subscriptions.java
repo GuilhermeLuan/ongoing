@@ -33,7 +33,7 @@ public class Subscriptions {
     @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
 
-    @Column(name = "next_payment_date", nullable = false)
+    @Column(name = "next_payment_date", nullable = true)
     private LocalDate nextPaymentDate;
 
     @Builder.Default

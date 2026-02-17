@@ -15,6 +15,9 @@ public interface SubscriptionsRepository extends JpaRepository<Subscriptions, Lo
 
     @Query("""
             SELECT s FROM Subscriptions s
+            LEFT JOIN FETCH s.category
+            LEFT JOIN FETCH s.paymentMethod
+            LEFT JOIN FETCH s.subscriptionType
             WHERE (:name IS NULL OR s.name ILIKE CONCAT('%', CAST(:name AS string), '%'))
             AND (:active IS NULL OR s.active = :active)
             AND (:categoryId IS NULL OR s.category.id = :categoryId)
@@ -27,12 +30,29 @@ public interface SubscriptionsRepository extends JpaRepository<Subscriptions, Lo
             @Param("userId") Long userId,
             Pageable pageable);
 
-    Page<Subscriptions> findAllByUserId(Long userId, Pageable pageable);
-
-    Optional<Subscriptions> findByIdAndUserId(Long id, Long userId);
+    @Query("""
+            SELECT s FROM Subscriptions s
+            LEFT JOIN FETCH s.category
+            LEFT JOIN FETCH s.paymentMethod
+            LEFT JOIN FETCH s.subscriptionType
+            WHERE s.user.id = :userId
+            """)
+    Page<Subscriptions> findAllByUserId(@Param("userId") Long userId, Pageable pageable);
 
     @Query("""
             SELECT s FROM Subscriptions s
+            LEFT JOIN FETCH s.category
+            LEFT JOIN FETCH s.paymentMethod
+            LEFT JOIN FETCH s.subscriptionType
+            WHERE s.id = :id AND s.user.id = :userId
+            """)
+    Optional<Subscriptions> findByIdAndUserId(@Param("id") Long id, @Param("userId") Long userId);
+
+    @Query("""
+            SELECT s FROM Subscriptions s
+            LEFT JOIN FETCH s.category
+            LEFT JOIN FETCH s.paymentMethod
+            LEFT JOIN FETCH s.subscriptionType
             WHERE s.user.id = :userId
             AND s.active = true
             """)

@@ -5,10 +5,7 @@ import dev.guilhermeluan.ongoing.auth.dto.AuthResponse;
 import dev.guilhermeluan.ongoing.auth.dto.RegisterRequest;
 import dev.guilhermeluan.ongoing.config.BaseIntegrationTest;
 import dev.guilhermeluan.ongoing.subscriptions.dto.SubscriptionRequestDto;
-import dev.guilhermeluan.ongoing.subscriptions.entities.BillingCycle;
-import dev.guilhermeluan.ongoing.subscriptions.entities.Category;
-import dev.guilhermeluan.ongoing.subscriptions.entities.Currency;
-import dev.guilhermeluan.ongoing.subscriptions.entities.Subscriptions;
+import dev.guilhermeluan.ongoing.subscriptions.entities.*;
 import dev.guilhermeluan.ongoing.user.RefreshTokenRepository;
 import dev.guilhermeluan.ongoing.user.User;
 import dev.guilhermeluan.ongoing.user.UserRepository;
@@ -83,16 +80,23 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
         assertThatJson(response).node("content[0].name").isEqualTo("Netflix");
         assertThatJson(response).node("content[0].description").isEqualTo("Netflix mensal");
         assertThatJson(response).node("content[0].value").isEqualTo(39.95);
+        assertThatJson(response).node("content[0].categoryName").isEqualTo("Video Streaming");
+        assertThatJson(response).node("content[0].paymentMethodName").isEqualTo("Credit Card");
 
         assertThatJson(response).node("content[1].id").isNotNull().isNumber();
         assertThatJson(response).node("content[1].name").isEqualTo("Spotify");
         assertThatJson(response).node("content[1].description").isEqualTo("Spotify mensal");
         assertThatJson(response).node("content[1].value").isEqualTo(19.95);
+        assertThatJson(response).node("content[1].categoryName").isEqualTo("Video Streaming");
+        assertThatJson(response).node("content[1].paymentMethodName").isEqualTo("Credit Card");
     }
 
     @Test
     void findById_ShouldReturnOneSubscriptionById() {
-        var subscription = insertSampleSubscriptions().getFirst();
+        Category videoStreaming = Category.builder().id(1L).build();
+        PaymentMethod paymentMethod = PaymentMethod.builder().id(1L).build();
+        Subscriptions subscription = subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), true, videoStreaming, paymentMethod));
+
 
         String response = given().contentType(ContentType.JSON)
                 .header("Authorization", "Bearer " + authToken)
@@ -105,6 +109,9 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
         assertThatJson(response).node("name").isEqualTo(subscription.getName());
         assertThatJson(response).node("description").isEqualTo(subscription.getDescription());
         assertThatJson(response).node("value").isEqualTo(subscription.getValue());
+        assertThatJson(response).node("categoryName").isNotNull();
+        assertThatJson(response).node("paymentMethodName").isNotNull();
+
     }
 
     @Test
@@ -182,11 +189,6 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                         "Start date is null",
                         new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), null, nextMonth, true, true, Currency.BRL, null, null, null, BillingCycle.MONTHLY, null),
                         "Start date is required"
-                ),
-                Arguments.of(
-                        "Next payment date is null",
-                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), now, null, true, true, Currency.BRL, null, null, null, BillingCycle.MONTHLY, null),
-                        "Next payment date is required"
                 ),
                 Arguments.of(
                         "Logo URL exceeds 255 characters",
@@ -313,6 +315,69 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
     }
 
     @Test
+    void update_ShouldChangeRelationships_WhenCategoryAndPaymentMethodChange() {
+        // Arrange: Create subscription with category 1 and payment method 1
+        Subscriptions subscription = subscriptionsRepository.save(
+                Subscriptions.builder()
+                        .name("Netflix")
+                        .description("Netflix Basic")
+                        .value(new BigDecimal("39.90"))
+                        .startDate(LocalDate.now())
+                        .nextPaymentDate(LocalDate.now().plusMonths(1))
+                        .billingCycle(BillingCycle.MONTHLY)
+                        .currency(Currency.BRL)
+                        .notify(true)
+                        .active(true)
+                        .category(Category.builder().id(1L).build())  // Category 1
+                        .paymentMethod(dev.guilhermeluan.ongoing.subscriptions.entities.PaymentMethod.builder().id(1L).build())  // Payment Method 1
+                        .subscriptionType(dev.guilhermeluan.ongoing.subscriptions.entities.SubscriptionType.builder().id(1L).build())
+                        .user(authenticatedUser)
+                        .build()
+        );
+
+        // Act: Update to category 2 and payment method 2 (CHANGES!)
+        SubscriptionRequestDto updateRequest = new SubscriptionRequestDto(
+                "Netflix Premium",
+                "Netflix Premium Plan",
+                new BigDecimal("55.90"),
+                subscription.getStartDate(),
+                subscription.getNextPaymentDate(),
+                true,
+                true,
+                Currency.BRL,
+                null,
+                2L,  // Change category from 1 to 2
+                2L,  // Change payment method from 1 to 2
+                BillingCycle.MONTHLY,
+                1L
+        );
+
+        String response = given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + authToken)
+                .body(updateRequest)
+                .when().put(API_URL + "/{id}", subscription.getId())
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .log().all()
+                .extract().body().asString();
+
+        // Assert: Verify the response
+        assertThatJson(response).node("id").isNotNull().isNumber();
+        assertThatJson(response).node("name").isEqualTo("Netflix Premium");
+        assertThatJson(response).node("categoryId").isEqualTo(2);
+        assertThatJson(response).node("paymentMethodId").isEqualTo(2);
+
+        // Assert: Verify in database that relationships actually changed
+        Subscriptions updatedSubscription = subscriptionsRepository.findById(subscription.getId()).orElseThrow();
+        assertThat(updatedSubscription.getName()).isEqualTo("Netflix Premium");
+        assertThat(updatedSubscription.getCategory()).isNotNull();
+        assertThat(updatedSubscription.getCategory().getId()).isEqualTo(2L);  // Changed from 1 to 2
+        assertThat(updatedSubscription.getPaymentMethod()).isNotNull();
+        assertThat(updatedSubscription.getPaymentMethod().getId()).isEqualTo(2L);  // Changed from 1 to 2
+        assertThat(updatedSubscription.getValue()).isEqualByComparingTo(new BigDecimal("55.90"));
+    }
+
+    @Test
     void delete_ShouldThrowNotFoundException_WhenSubscriptionIsNotFound() {
 
         long id = 99L;
@@ -327,10 +392,30 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
     }
 
     private List<Subscriptions> insertSampleSubscriptions() {
-        Subscriptions subscriptions = subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), LocalDate.now(), LocalDate.now().plusMonths(1), BillingCycle.MONTHLY, authenticatedUser));
-        Subscriptions subscriptions1 = subscriptionsRepository.save(createSubscription("Spotify", new BigDecimal("19.95"), LocalDate.now().minusDays(10), LocalDate.now().plusMonths(1), BillingCycle.MONTHLY, authenticatedUser));
+        Category category = Category.builder().id(1L).build();
+        PaymentMethod paymentMethod = PaymentMethod.builder().id(1L).build();
+
+        Subscriptions subscriptions = subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), LocalDate.now(), LocalDate.now().plusMonths(1), BillingCycle.MONTHLY, authenticatedUser, category, paymentMethod));
+        Subscriptions subscriptions1 = subscriptionsRepository.save(createSubscription("Spotify", new BigDecimal("19.95"), LocalDate.now().minusDays(10), LocalDate.now().plusMonths(1), BillingCycle.MONTHLY, authenticatedUser, category, paymentMethod));
 
         return List.of(subscriptions, subscriptions1);
+    }
+
+    private Subscriptions createSubscription(String name, BigDecimal value, LocalDate startDate, LocalDate nextPaymentDate, BillingCycle billingCycle, User user, Category category, PaymentMethod paymentMethod) {
+        return Subscriptions.builder()
+                .name(name)
+                .description(name + " mensal")
+                .value(value)
+                .startDate(startDate)
+                .nextPaymentDate(nextPaymentDate)
+                .billingCycle(billingCycle)
+                .currency(Currency.BRL)
+                .category(category)
+                .paymentMethod(paymentMethod)
+                .notify(true)
+                .active(true)
+                .user(user)
+                .build();
     }
 
     private Subscriptions createSubscription(String name, BigDecimal value, LocalDate startDate, LocalDate nextPaymentDate, BillingCycle billingCycle, User user) {
@@ -361,6 +446,23 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                 .active(active)
                 .category(category)
                 .user(authenticatedUser)
+                .build();
+    }
+
+    private Subscriptions createSubscription(String name, BigDecimal value, boolean active, Category category, PaymentMethod paymentMethod) {
+        return Subscriptions.builder()
+                .name(name)
+                .description(name + " mensal")
+                .value(value)
+                .startDate(LocalDate.now())
+                .nextPaymentDate(LocalDate.now().plusMonths(1))
+                .billingCycle(BillingCycle.MONTHLY)
+                .currency(Currency.BRL)
+                .notify(true)
+                .active(active)
+                .category(category)
+                .user(authenticatedUser)
+                .paymentMethod(paymentMethod)
                 .build();
     }
 
@@ -414,6 +516,7 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                 .queryParam("categoryId", 1)
                 .when().get(API_URL)
                 .then()
+                .log().all()
                 .statusCode(HttpStatus.OK.value())
                 .extract().body().asString();
 
