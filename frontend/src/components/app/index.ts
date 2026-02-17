@@ -12,3 +12,4 @@ export {AppearanceEditor} from "./AppearanceEditor";
 export {ColorPicker} from "./ColorPicker";
 export {SubscriptionDetailsView} from "./SubscriptionDetailsView";
 export {DeleteConfirmationModal} from "./DeleteConfirmationModal";
+export {DashboardContent} from "./DashboardContent";
