@@ -45,8 +45,6 @@ class NotificationRepositoryIT extends BaseIntegrationTest {
         this.authenticatedUser = userRepository.findByEmail("test@example.com").orElseThrow();
     }
 
-    // ─── Happy Path ───────────────────────────────────────────────────────────
-
     @Test
     void shouldReturnSubscriptionsDueOnTargetDate() {
         LocalDate tomorrow = LocalDate.now().plusDays(1);
@@ -128,8 +126,6 @@ class NotificationRepositoryIT extends BaseIntegrationTest {
         assertThat(grouped.get(secondUser)).hasSize(1);
     }
 
-    // ─── Edge Cases — Filters ─────────────────────────────────────────────────
-
     @Test
     void shouldExcludeSubscriptionsWithNotifyFalse() {
         LocalDate tomorrow = LocalDate.now().plusDays(1);
@@ -191,7 +187,6 @@ class NotificationRepositoryIT extends BaseIntegrationTest {
         assertThat(sub.getPaymentMethod()).isNull();
     }
 
-    // ─── Helper ───────────────────────────────────────────────────────────────
 
     private Subscriptions createSubscription(LocalDate nextPaymentDate, boolean active, boolean notify) {
         return subscriptionsRepository.save(

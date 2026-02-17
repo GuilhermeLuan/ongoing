@@ -34,7 +34,7 @@ public class NotificationScheduler {
 
         grouped.forEach((user, subscriptions) -> {
             try {
-                String redisKey = String.format("reminder:%s:%s", user.getId(), date.toString());
+                String redisKey = String.format("reminder:%s:%s", user.getId(), date);
                 if (Boolean.FALSE.equals(redis.hasKey(redisKey))) {
                     emailService.sendRenewalReminder(user, subscriptions, date);
                     redis.opsForValue().set(redisKey, "sent", 48, TimeUnit.HOURS);

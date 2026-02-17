@@ -6,7 +6,6 @@ import dev.guilhermeluan.ongoing.subscriptions.entities.BillingCycle;
 import dev.guilhermeluan.ongoing.subscriptions.entities.Subscriptions;
 import dev.guilhermeluan.ongoing.user.User;
 import dev.guilhermeluan.ongoing.user.UserRepository;
-import dev.guilhermeluan.ongoing.user.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -22,7 +21,7 @@ public class SubscriptionsService {
     private final SubscriptionsRepository subscriptionsRepository;
     private final UserRepository userRepository;
 
-    public SubscriptionsService(SubscriptionsRepository subscriptionsRepository, UserService userService, UserRepository userRepository) {
+    public SubscriptionsService(SubscriptionsRepository subscriptionsRepository, UserRepository userRepository) {
         this.subscriptionsRepository = subscriptionsRepository;
         this.userRepository = userRepository;
     }
