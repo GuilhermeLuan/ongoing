@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class SubscriptionsService {
@@ -87,5 +89,10 @@ public class SubscriptionsService {
             case WEEKLY -> lastBillingDate.plusWeeks(1);
             case BIWEEKLY -> lastBillingDate.plusWeeks(2);
         };
+    }
+
+    public Map<User, List<Subscriptions>> findRenewalSubscriptionsGroupedByUser(LocalDate date) {
+        List<Subscriptions> subscriptions = subscriptionsRepository.findByNextPaymentDateAndActiveAndNotify(date);
+        return subscriptions.stream().collect(Collectors.groupingBy(Subscriptions::getUser));
     }
 }

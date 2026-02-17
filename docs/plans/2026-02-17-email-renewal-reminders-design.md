@@ -25,12 +25,14 @@ duplicatas.
 ```
 [Scheduler @8h] --> [NotificationScheduler]
                          |
+                    [SubscriptionsService] busca e agrupa subs
+                         |
                     [Repository] busca subs onde:
                          - nextPaymentDate = amanha
                          - active = true
                          - notify = true
                          |
-                    Agrupa por usuario
+                    Retorna Map<User, List<Subscriptions>>
                          |
                     Para cada usuario:
                          |
@@ -59,25 +61,27 @@ backend/src/main/java/dev/guilhermeluan/ongoing/
 
 ### NotificationScheduler
 
+O scheduler **nao acessa o repository diretamente** — segue o padrao do projeto (Scheduler -> Service -> Repository).
+
 ```java
 
 @Component
 @EnableScheduling
 public class NotificationScheduler {
 
-    @Scheduled(cron = "0 0 8 * * *")  // Todo dia as 08:00
+  private final SubscriptionsService subscriptionsService;
+  private final EmailService emailService;
+  private final StringRedisTemplate redis;
+
+  @Scheduled(cron = "0 0 8 * * *")  // Todo dia as 08:00
     public void sendRenewalReminders() {
         LocalDate tomorrow = LocalDate.now().plusDays(1);
 
-        // 1. Busca assinaturas que vencem amanha
-        List<Subscriptions> expiring = repository
-                .findByNextPaymentDateAndActiveAndNotify(tomorrow);
+    // 1. Busca assinaturas agrupadas por usuario (via Service)
+    Map<User, List<Subscriptions>> grouped =
+            subscriptionsService.findRenewalSubscriptionsGroupedByUser(tomorrow);
 
-        // 2. Agrupa por usuario
-        Map<User, List<Subscriptions>> grouped = expiring.stream()
-                .collect(Collectors.groupingBy(Subscriptions::getUser));
-
-        // 3. Para cada usuario, verifica Redis e envia
+    // 2. Para cada usuario, verifica Redis e envia
         grouped.forEach((user, subs) -> {
             String redisKey = "reminder:" + user.getId() + ":" + tomorrow;
             if (!redis.hasKey(redisKey)) {
@@ -86,6 +90,16 @@ public class NotificationScheduler {
             }
         });
     }
+}
+```
+
+### Novo metodo no SubscriptionsService
+
+```java
+
+public Map<User, List<Subscriptions>> findRenewalSubscriptionsGroupedByUser(LocalDate date) {
+  List<Subscriptions> expiring = subscriptionsRepository.findByNextPaymentDateAndActiveAndNotify(date);
+  return expiring.stream().collect(Collectors.groupingBy(Subscriptions::getUser));
 }
 ```
 
@@ -191,9 +205,8 @@ FRONTEND_URL=https://ongoing.up.railway.app
 
 ### Unitarios
 
-- **`NotificationSchedulerTest`**: Mocka repository, redis e emailService
-    - Verifica busca correta (amanha, ativas, notify=true)
-    - Verifica agrupamento por usuario
+- **`NotificationSchedulerTest`**: Mocka service, redis e emailService
+  - Verifica que chama service (nao repository diretamente)
     - Verifica que nao envia duplicata se chave Redis existe
     - Verifica que seta chave Redis apos envio
 
