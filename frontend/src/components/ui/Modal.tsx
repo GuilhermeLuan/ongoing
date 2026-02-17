@@ -36,13 +36,30 @@ export function Modal({
             }
         };
 
-        const previousOverflow = document.body.style.overflow;
-        document.body.style.overflow = "hidden";
+        const scrollY = window.scrollY;
+        const previousBodyStyles = {
+            position: document.body.style.position,
+            top: document.body.style.top,
+            left: document.body.style.left,
+            right: document.body.style.right,
+            width: document.body.style.width,
+        };
+
+        document.body.style.position = "fixed";
+        document.body.style.top = `-${scrollY}px`;
+        document.body.style.left = "0";
+        document.body.style.right = "0";
+        document.body.style.width = "100%";
 
         document.addEventListener("keydown", handleEscape);
 
         return () => {
-            document.body.style.overflow = previousOverflow;
+            document.body.style.position = previousBodyStyles.position;
+            document.body.style.top = previousBodyStyles.top;
+            document.body.style.left = previousBodyStyles.left;
+            document.body.style.right = previousBodyStyles.right;
+            document.body.style.width = previousBodyStyles.width;
+            window.scrollTo(0, scrollY);
             document.removeEventListener("keydown", handleEscape);
         };
     }, [isOpen, onClose]);
@@ -53,25 +70,31 @@ export function Modal({
 
     return createPortal(
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 z-[70] flex items-center justify-center p-4"
             role="dialog"
             aria-modal="true"
             aria-label={title}
+            style={{
+                paddingTop: "max(1rem, env(safe-area-inset-top))",
+                paddingRight: "max(1rem, env(safe-area-inset-right))",
+                paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
+                paddingLeft: "max(1rem, env(safe-area-inset-left))",
+            }}
         >
             <button
                 type="button"
-                className="absolute inset-0 bg-neutral-900/50 animate-fadeIn"
+                className="absolute inset-0 bg-neutral-900/45 animate-fadeIn"
                 onClick={onClose}
                 aria-label="Fechar modal"
             />
 
             <div
                 className={cn(
-                    "relative w-full rounded-xl bg-white shadow-elevated border border-neutral-100 animate-fadeInUp",
+                    "relative flex max-h-[calc(100dvh-2rem)] w-full flex-col rounded-xl border border-neutral-100 bg-white shadow-elevated will-change-transform animate-fadeIn md:animate-fadeInUp",
                     sizeClasses[size]
                 )}
             >
-                <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100">
+                <div className="flex items-center justify-between border-b border-neutral-100 px-6 py-4">
                     <h2 className="text-lg font-semibold text-neutral-900">{title}</h2>
                     <button
                         type="button"
@@ -95,7 +118,9 @@ export function Modal({
                     </button>
                 </div>
 
-                <div className="p-6">{children}</div>
+                <div className="overflow-y-auto p-6 [overscroll-behavior:contain]">
+                    {children}
+                </div>
             </div>
         </div>,
         document.body

@@ -183,17 +183,30 @@ export function SubscriptionForm({
             nextErrors.startDate = "Data de início é obrigatória.";
         }
 
+        // Currency: required
+        if (!values.currency) {
+            nextErrors.currency = "Moeda é obrigatória.";
+        }
+
+        // Category: required
+        if (!values.categoryId) {
+            nextErrors.categoryId = "Categoria é obrigatória.";
+        }
+
         // Billing cycle: required
         if (!values.billingCycle) {
             nextErrors.billingCycle = "Ciclo de cobrança é obrigatório.";
+        }
+
+        // Payment method: required
+        if (!values.paymentMethodId) {
+            nextErrors.paymentMethodId = "Método de pagamento é obrigatório.";
         }
 
         // Logo URL: optional, but if provided max 255
         if (values.logoUrl && values.logoUrl.trim().length > 255) {
             nextErrors.logoUrl = "Logo URL deve ter no máximo 255 caracteres.";
         }
-
-        // Category, PaymentMethod: optional, no validation needed
 
         setErrors(nextErrors);
         return Object.keys(nextErrors).length === 0;
@@ -315,6 +328,7 @@ export function SubscriptionForm({
                             options={currencyOptions}
                             value={values.currency}
                             onChange={(event) => setValue("currency", event.target.value as Currency)}
+                            error={errors.currency}
                         />
                     </div>
 
@@ -334,6 +348,7 @@ export function SubscriptionForm({
                             value={values.categoryId}
                             onChange={(event) => setValue("categoryId", event.target.value)}
                             placeholder="Selecione uma categoria"
+                            error={errors.categoryId}
                         />
                     </div>
 
@@ -355,6 +370,7 @@ export function SubscriptionForm({
                             value={values.paymentMethodId}
                             onChange={(event) => setValue("paymentMethodId", event.target.value)}
                             placeholder="Selecione um método"
+                            error={errors.paymentMethodId}
                         />
                     </div>
 

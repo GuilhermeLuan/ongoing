@@ -58,7 +58,7 @@ export function SubscriptionCard({
     return (
       <div
         className={cn(
-          "flex items-center gap-4 p-3 rounded-lg bg-white border border-neutral-100 hover:border-neutral-200 transition-all cursor-pointer",
+            "flex cursor-pointer items-center gap-4 rounded-lg border border-neutral-100 bg-white p-3 transition-[border-color,box-shadow] hover:border-neutral-200",
           className
         )}
         onClick={onClick}
@@ -84,7 +84,7 @@ export function SubscriptionCard({
               {formatDate(subscription.nextPaymentDate)}
           </p>
         </div>
-        <div className="text-right">
+          <div className="min-w-[96px] text-right">
           <p className="font-semibold text-neutral-900">
               {formatSubscriptionValue(subscription.value, subscription.currency)}
           </p>
@@ -105,7 +105,7 @@ export function SubscriptionCard({
   return (
     <div
       className={cn(
-          "group p-5 rounded-xl bg-white border border-neutral-100 hover:border-neutral-200 hover:shadow-medium transition-all",
+          "group rounded-xl border border-neutral-100 bg-white p-5 transition-[border-color,box-shadow] hover:border-neutral-200 hover:shadow-medium",
           onClick && "cursor-pointer",
         className
       )}

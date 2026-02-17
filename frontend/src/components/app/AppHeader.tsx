@@ -43,7 +43,14 @@ export function AppHeader({ title, subtitle }: AppHeaderProps) {
     }
 
   return (
-    <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-sm border-b border-neutral-100">
+      <header
+          className="sticky top-0 z-30 border-b border-neutral-100 bg-white md:bg-white/80 md:backdrop-blur-sm"
+          style={{
+              paddingTop: "env(safe-area-inset-top)",
+              paddingRight: "env(safe-area-inset-right)",
+              paddingLeft: "env(safe-area-inset-left)",
+          }}
+      >
       <div className="flex items-center justify-between h-16 px-4 sm:px-6">
         {/* Left side - Menu button & Title */}
         <div className="flex items-center gap-3">
@@ -132,7 +139,7 @@ export function AppHeader({ title, subtitle }: AppHeaderProps) {
             <div className="relative" ref={dropdownRef}>
                 <button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="p-1 rounded-full transition-all hover:ring-2 hover:ring-neutral-200"
+                    className="rounded-full p-1 transition-[box-shadow,transform] hover:ring-2 hover:ring-neutral-200"
                     aria-label="Menu do usuário"
                 >
                     <Avatar

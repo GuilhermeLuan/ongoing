@@ -23,7 +23,7 @@ export default function AppLayout({
   return (
       <ProtectedRoute>
           <SidebarProvider>
-              <div className="min-h-screen bg-neutral-50">
+              <div className="min-h-[100dvh] bg-neutral-50">
                   <AppContent>{children}</AppContent>
               </div>
           </SidebarProvider>

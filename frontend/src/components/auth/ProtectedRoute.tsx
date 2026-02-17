@@ -18,7 +18,7 @@ export function ProtectedRoute({children}: { children: React.ReactNode }) {
 
     if (!isInitialized || !user) {
         return (
-            <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+            <div className="min-h-[100dvh] bg-neutral-50 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
                     <Logo/>
                     <div

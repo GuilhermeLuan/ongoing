@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { X } from "lucide-react";
+import {usePathname} from "next/navigation";
+import {cn} from "@/lib/utils";
+import {X} from "lucide-react";
 
 const navigation = [
   {
@@ -111,7 +111,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed left-0 top-0 z-50 h-screen w-60 bg-white border-r border-neutral-200 transition-transform duration-300 ease-in-out",
+            "fixed left-0 top-0 z-50 h-screen w-60 border-r border-neutral-200 bg-white pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] transition-transform duration-300 ease-in-out",
           // Mobile: hidden by default, shown when isOpen
           "lg:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full"
@@ -148,7 +148,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
                   href={item.href}
                   onClick={handleLinkClick}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-200",
                     isActive
                       ? "bg-primary-50 text-primary-600"
                       : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
