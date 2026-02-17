@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
 
 class DashboardControllerIT extends BaseIntegrationTest {
 
-    public static final String API_URL = "/api/v1/dasboard";
+    public static final String API_URL = "/api/v1/dashboard";
 
     @Autowired
     private SubscriptionsRepository subscriptionsRepository;

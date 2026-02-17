@@ -16,9 +16,10 @@ export const API_ENDPOINTS = {
         // Note: Backend doesn't have a logout endpoint (tokens expire naturally)
     },
 
-    // Resource endpoints (for future use)
+    // Resource endpoints
     SUBSCRIPTIONS: '/subscriptions',
     CATEGORIES: '/categories',
+    DASHBOARD: '/dashboard',
 } as const;
 
 // LocalStorage Keys
