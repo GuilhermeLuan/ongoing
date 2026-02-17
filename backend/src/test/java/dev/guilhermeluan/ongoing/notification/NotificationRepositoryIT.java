@@ -36,7 +36,7 @@ class NotificationRepositoryIT extends BaseIntegrationTest {
     private User authenticatedUser;
 
     @BeforeEach
-    void setUp() {
+    void setUpTestData() {
         subscriptionsRepository.deleteAll();
         refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
