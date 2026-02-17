@@ -34,7 +34,7 @@ class AuthControllerIT extends BaseIntegrationTest {
     private AuthService authService;
 
     @BeforeEach
-    void setUp() {
+    void cleanUp() {
         refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
     }
