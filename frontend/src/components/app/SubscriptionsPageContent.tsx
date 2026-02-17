@@ -235,8 +235,8 @@ export function SubscriptionsPageContent() {
                 subtitle={`${page?.totalElements ?? subscriptions.length} assinaturas cadastradas`}
             />
 
-            <main className="p-6 space-y-6">
-                <div className="flex items-center justify-between">
+            <main className="space-y-6 p-4 sm:p-6">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h1 className="text-2xl font-bold text-neutral-900 font-display">
                             Minhas Assinaturas
@@ -287,7 +287,7 @@ export function SubscriptionsPageContent() {
                 isOpen={isModalOpen}
                 onClose={closeModal}
                 title={modalTitle}
-                size={modalStep === "details" ? "md" : "lg"}
+                size="md"
             >
                 {modalStep === "details" && viewingSubscription ? (
                     <SubscriptionDetailsView
