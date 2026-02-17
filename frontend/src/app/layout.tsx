@@ -1,4 +1,4 @@
-import type {Metadata} from "next";
+import type {Metadata, Viewport} from "next";
 import {Inter, JetBrains_Mono, Plus_Jakarta_Sans} from "next/font/google";
 import "./globals.css";
 import {AuthProvider} from "@/features/auth";
@@ -44,13 +44,19 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+    width: "device-width",
+    initialScale: 1,
+    viewportFit: "cover",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className="scroll-smooth">
+      <html lang="pt-BR">
       <body
         className={`${plusJakarta.variable} ${inter.variable} ${jetbrainsMono.variable} font-body antialiased`}
       >

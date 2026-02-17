@@ -22,7 +22,7 @@ export default function DashboardPage() {
   return (
     <>
       <AppHeader />
-      <main className="p-6">
+        <main className="p-4 sm:p-6">
         {/* Welcome */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-neutral-900 font-display">
@@ -175,7 +175,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="h-2 bg-neutral-100 rounded-full overflow-hidden">
                       <div
-                        className="h-full rounded-full transition-all duration-500"
+                          className="h-full rounded-full transition-[width] duration-500"
                         style={{
                           width: `${percentage}%`,
                           backgroundColor: categoryColors[category],

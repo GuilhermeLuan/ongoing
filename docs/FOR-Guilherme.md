@@ -481,6 +481,30 @@ infraestrutura da aplicação e deve ser tratado como configuração de ambiente
 
 ---
 
+## Correção Quentinha: Performance Mobile e Safe Areas (iOS Safari)
+
+Esse foi um daqueles bugs que parecem "só visual", mas na prática afetam confiança e sensação de qualidade: barra preta
+no topo em iPhone, travadinhas ao abrir modal e animações custosas em telas menores.
+
+O pacote de correções teve três ideias-chave:
+
+1. **Respeitar a área segura do dispositivo**  
+   O layout passou a usar `viewportFit: "cover"` e os componentes fixos/sticky (header, sidebar e modal) receberam
+   `env(safe-area-inset-*)`. Isso evita vazamento visual perto do notch e deixa o app "encaixado" no device certo.
+
+2. **Scroll lock sem recalcular tudo no Safari**  
+   Em vez de `overflow: hidden` no `body`, o modal fixa o body com `position: fixed`, guarda o `scrollY` e restaura ao
+   fechar. Resultado: menos custo de layout e abertura mais fluida no mobile.
+
+3. **Efeitos caros só quando fazem sentido**  
+   Blur pesado e animações infinitas ficaram restritos ao desktop (`md:`). No mobile, reduzimos blur e removemos
+   animações contínuas decorativas. Também trocamos `transition-all` por transições de propriedades específicas.
+
+Lição prática: performance mobile raramente melhora com "uma bala de prata". Ela melhora quando você elimina pequenas
+fontes de custo em camadas (layout, animação, GPU e comportamento de scroll).
+
+---
+
 ## Conclusão
 
 O Ongoing não é só um CRUD de assinaturas. É um exemplo de como estruturar uma aplicação Spring Boot moderna seguindo

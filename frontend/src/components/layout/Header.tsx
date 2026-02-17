@@ -29,11 +29,16 @@ export function Header() {
   return (
     <header
       className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
+          "fixed top-0 left-0 right-0 z-50 transition-[background-color,box-shadow,padding] duration-300",
         isScrolled
-          ? "bg-white/80 backdrop-blur-md shadow-soft py-3"
+            ? "bg-white py-3 shadow-soft md:bg-white/80 md:backdrop-blur-md"
           : "bg-transparent py-4"
       )}
+      style={{
+          paddingTop: "env(safe-area-inset-top)",
+          paddingRight: "env(safe-area-inset-right)",
+          paddingLeft: "env(safe-area-inset-left)",
+      }}
     >
       <Container>
         <nav className="flex items-center justify-between">

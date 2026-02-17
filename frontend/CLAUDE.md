@@ -60,6 +60,19 @@ import { Sidebar, AppHeader } from "@/components/app";
 - Custom shadows: `soft`, `medium`, `elevated`, `glow`, `glow-accent`
 - Icon library: **Lucide React**
 
+### Mobile-first Performance Guidelines
+
+- Always keep `viewportFit: "cover"` in `src/app/layout.tsx` and account for iOS safe areas (`env(safe-area-inset-*)`)
+  in fixed/sticky UI (Modal, Sidebar, headers).
+- Prefer solid backgrounds on mobile over `backdrop-blur-*`; if blur is needed, gate it behind `md:`.
+- Avoid infinite animations on mobile. Use responsive classes (e.g., `md:animate-*`) and keep decorative blur elements
+  lighter on small screens.
+- Avoid `transition-all` in interactive components. Transition only required properties (`transform`, `box-shadow`,
+  `width`, `colors`).
+- Keep modal open/close lightweight on mobile: lock scroll with `position: fixed` preserving scroll offset, and keep
+  content scrollable inside modal.
+- Respect `prefers-reduced-motion` in global CSS and disable smooth scroll for users requesting reduced motion.
+
 ### Design System Tokens
 
 ```

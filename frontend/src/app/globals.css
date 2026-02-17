@@ -32,7 +32,13 @@
 
 @layer base {
   html {
-    scroll-behavior: smooth;
+      scroll-behavior: auto;
+  }
+
+    @media (min-width: 768px) {
+        html {
+            scroll-behavior: smooth;
+        }
   }
 
   body {
@@ -75,11 +81,11 @@
   }
 
   .glass {
-    @apply bg-white/80 backdrop-blur-md;
+      @apply bg-white md:bg-white/80 md:backdrop-blur-md;
   }
 
   .hover-lift {
-    @apply transition-all duration-300;
+      @apply transition-[transform, box-shadow] duration-300;
   }
 
   .hover-lift:hover {
@@ -87,7 +93,7 @@
   }
 
   .card {
-    @apply rounded-xl border border-neutral-200 bg-white p-6 shadow-soft transition-all duration-300;
+      @apply rounded-xl border border-neutral-200 bg-white p-6 shadow-soft transition-[transform, box-shadow] duration-300;
   }
 
   .card:hover {
@@ -123,4 +129,18 @@
   .text-balance {
     text-wrap: balance;
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
 }
