@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { Button, Input, Select } from '@/components/ui';
+import { GradientText } from '@/components/ui/GradientText';
 import ServiceSuggestionCard from './ServiceSuggestionCard';
 import { popularServices } from '@/features/subscriptions/data/popular-services';
-import type { PopularService, SubscriptionRequest } from '@/features/subscriptions/types/subscription.types';
+import type { PopularService, SubscriptionRequest, BillingCycle } from '@/features/subscriptions/types/subscription.types';
 
 interface StepAddSubscriptionProps {
     onNext: (subscription: SubscriptionRequest) => void;
@@ -13,10 +14,16 @@ interface StepAddSubscriptionProps {
 
 export default function StepAddSubscription({ onNext, onSubmitting }: StepAddSubscriptionProps) {
     const [selectedService, setSelectedService] = useState<PopularService | null>(null);
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<{
+        name: string;
+        value: string;
+        billingCycle: BillingCycle;
+        categoryId: string;
+        nextPaymentDate: string;
+    }>({
         name: '',
         value: '',
-        billingCycle: 'MONTHLY' as const,
+        billingCycle: 'MONTHLY',
         categoryId: '',
         nextPaymentDate: '',
     });
@@ -151,13 +158,14 @@ export default function StepAddSubscription({ onNext, onSubmitting }: StepAddSub
                         </label>
                         <Select
                             value={formData.billingCycle}
-                            onChange={(e) => setFormData({ ...formData, billingCycle: e.target.value as any })}
-                        >
-                            <option value="WEEKLY">Semanal</option>
-                            <option value="MONTHLY">Mensal</option>
-                            <option value="QUARTERLY">Trimestral</option>
-                            <option value="YEARLY">Anual</option>
-                        </Select>
+                            onChange={(e) => setFormData({ ...formData, billingCycle: e.target.value as BillingCycle })}
+                            options={[
+                                { value: 'WEEKLY', label: 'Semanal' },
+                                { value: 'MONTHLY', label: 'Mensal' },
+                                { value: 'QUARTERLY', label: 'Trimestral' },
+                                { value: 'YEARLY', label: 'Anual' },
+                            ]}
+                        />
                     </div>
                 </div>
 
@@ -169,18 +177,19 @@ export default function StepAddSubscription({ onNext, onSubmitting }: StepAddSub
                     <Select
                         value={formData.categoryId}
                         onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                    >
-                        <option value="">Selecione...</option>
-                        <option value="1">Video Streaming</option>
-                        <option value="2">Music Streaming</option>
-                        <option value="3">Gaming</option>
-                        <option value="4">Software/SaaS</option>
-                        <option value="5">Educação</option>
-                        <option value="6">Saúde</option>
-                        <option value="7">Utilidades</option>
-                        <option value="8">Seguros</option>
-                        <option value="9">Outros</option>
-                    </Select>
+                        placeholder="Selecione..."
+                        options={[
+                            { value: '1', label: 'Video Streaming' },
+                            { value: '2', label: 'Music Streaming' },
+                            { value: '3', label: 'Gaming' },
+                            { value: '4', label: 'Software/SaaS' },
+                            { value: '5', label: 'Educação' },
+                            { value: '6', label: 'Saúde' },
+                            { value: '7', label: 'Utilidades' },
+                            { value: '8', label: 'Seguros' },
+                            { value: '9', label: 'Outros' },
+                        ]}
+                    />
                 </div>
 
                 {/* Next Payment Date */}

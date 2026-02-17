@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui';
-import GradientText from '@/components/ui/GradientText';
+import { GradientText } from '@/components/ui/GradientText';
 import ConfettiAnimation from './ConfettiAnimation';
 import type { SubscriptionResponse } from '@/features/subscriptions/types/subscription.types';
 

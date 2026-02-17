@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui';
-import GradientText from '@/components/ui/GradientText';
+import { GradientText } from '@/components/ui/GradientText';
 
 interface StepWelcomeProps {
     userName: string;
