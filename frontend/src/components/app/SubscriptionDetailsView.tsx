@@ -1,7 +1,7 @@
 "use client";
 
 import {useEffect, useState} from "react";
-import {Bell, Calendar, CreditCard, FileText, Grid3x3} from "lucide-react";
+import {Bell, Calendar, CreditCard, Grid3x3} from "lucide-react";
 import {Badge, Button} from "@/components/ui";
 import type {SubscriptionResponse} from "@/features/subscriptions";
 import {
@@ -16,6 +16,8 @@ import {
 interface SubscriptionDetailsViewProps {
     subscription: SubscriptionResponse;
     onEdit: () => void;
+    onToggleActive: () => void;
+    onDelete: () => void;
     onClose: () => void;
 }
 
@@ -37,6 +39,8 @@ const getAvatarColor = (name: string): string => {
 export function SubscriptionDetailsView({
                                             subscription,
                                             onEdit,
+                                            onToggleActive,
+                                            onDelete,
                                         }: SubscriptionDetailsViewProps) {
     const [imageError, setImageError] = useState(false);
     const avatarColor = getAvatarColor(subscription.name);
@@ -84,9 +88,30 @@ export function SubscriptionDetailsView({
                         </div>
                     </div>
                 </div>
-                <Button onClick={onEdit} size="sm">
-                    Editar
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button
+                        onClick={onEdit}
+                        size="sm"
+                        variant="outline"
+                    >
+                        Editar
+                    </Button>
+                    <Button
+                        onClick={onToggleActive}
+                        size="sm"
+                        variant={subscription.active ? "outline" : "primary"}
+                    >
+                        {subscription.active ? "Marcar como cancelada" : "Reativar"}
+                    </Button>
+                    <Button
+                        onClick={onDelete}
+                        size="sm"
+                        variant="outline"
+                        className="text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50"
+                    >
+                        Excluir
+                    </Button>
+                </div>
             </div>
 
             {/* Info Cards Row */}
@@ -120,7 +145,7 @@ export function SubscriptionDetailsView({
                         Categoria
                     </p>
                     <p className="text-sm font-semibold text-neutral-900">
-                        {getCategoryName(subscription.categoryId)}
+                        {getCategoryName(subscription)}
                     </p>
                 </div>
             </div>
@@ -148,7 +173,7 @@ export function SubscriptionDetailsView({
                     <div className="flex-1">
                         <p className="text-sm font-medium text-neutral-900">Categoria</p>
                         <p className="text-sm text-neutral-600 mt-0.5">
-                            {getCategoryName(subscription.categoryId)}
+                            {getCategoryName(subscription)}
                         </p>
                     </div>
                 </div>
@@ -161,7 +186,7 @@ export function SubscriptionDetailsView({
                     <div className="flex-1">
                         <p className="text-sm font-medium text-neutral-900">Método de pagamento</p>
                         <p className="text-sm text-neutral-600 mt-0.5">
-                            {getPaymentMethodName(subscription.paymentMethodId)}
+                            {getPaymentMethodName(subscription)}
                         </p>
                     </div>
                 </div>
@@ -178,22 +203,6 @@ export function SubscriptionDetailsView({
                         </p>
                     </div>
                 </div>
-
-                {/* Notas/Descrição */}
-                {subscription.description && (
-                    <div className="flex items-start gap-3">
-                        <div
-                            className="w-10 h-10 rounded-lg bg-neutral-100 flex items-center justify-center flex-shrink-0">
-                            <FileText className="w-5 h-5 text-neutral-700"/>
-                        </div>
-                        <div className="flex-1">
-                            <p className="text-sm font-medium text-neutral-900">Notas</p>
-                            <p className="text-sm text-neutral-600 mt-0.5">
-                                {subscription.description}
-                            </p>
-                        </div>
-                    </div>
-                )}
             </div>
         </div>
     );

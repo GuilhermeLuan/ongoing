@@ -23,6 +23,8 @@ export interface SubscriptionResponse {
     paymentMethodId: number | null;
     billingCycle: BillingCycle;
     subscriptionTypeId: number | null;
+    categoryName: string | null;
+    paymentMethodName: string | null;
 }
 
 export interface SubscriptionRequest {

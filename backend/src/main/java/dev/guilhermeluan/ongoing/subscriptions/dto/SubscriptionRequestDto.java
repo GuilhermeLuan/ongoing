@@ -25,7 +25,6 @@ public record SubscriptionRequestDto(
         @NotNull(message = "Start date is required")
         LocalDate startDate,
 
-        @NotNull(message = "Next payment date is required")
         LocalDate nextPaymentDate,
 
         Boolean active,

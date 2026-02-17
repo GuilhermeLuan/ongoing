@@ -1,7 +1,14 @@
 "use client";
 
 import {useMemo, useState} from "react";
-import {AppHeader, ServicePicker, SubscriptionDetailsView, SubscriptionForm, SubscriptionList,} from "@/components/app";
+import {
+    AppHeader,
+    DeleteConfirmationModal,
+    ServicePicker,
+    SubscriptionDetailsView,
+    SubscriptionForm,
+    SubscriptionList,
+} from "@/components/app";
 import {Button, Modal} from "@/components/ui";
 import {
     type PopularService,
@@ -32,6 +39,10 @@ export function SubscriptionsPageContent() {
 
     // Details view state
     const [viewingSubscription, setViewingSubscription] = useState<SubscriptionResponse | null>(null);
+
+    // Delete confirmation modal state
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [subscriptionToDelete, setSubscriptionToDelete] = useState<SubscriptionResponse | null>(null);
 
     const {
         subscriptions,
@@ -108,16 +119,47 @@ export function SubscriptionsPageContent() {
         setModalStep("picker");
     };
 
-    const handleDelete = async (subscription: SubscriptionResponse) => {
-        const confirmed = window.confirm(
-            `Deseja realmente excluir a assinatura "${subscription.name}"?`
-        );
+    const handleDelete = (subscription: SubscriptionResponse) => {
+        setSubscriptionToDelete(subscription);
+        setIsDeleteModalOpen(true);
+    };
 
-        if (!confirmed) {
-            return;
-        }
+    const handleConfirmDelete = async () => {
+        if (!subscriptionToDelete) return;
 
-        await deleteSubscription(subscription.id);
+        await deleteSubscription(subscriptionToDelete.id);
+        setIsDeleteModalOpen(false);
+        setSubscriptionToDelete(null);
+        closeModal(); // Close details modal too
+        await refreshCurrentPage();
+    };
+
+    const handleToggleActive = async () => {
+        if (!viewingSubscription) return;
+
+        const updatedData: SubscriptionRequest = {
+            name: viewingSubscription.name,
+            description: viewingSubscription.description,
+            value: viewingSubscription.value,
+            startDate: viewingSubscription.startDate,
+            active: !viewingSubscription.active, // Toggle the active status
+            notifyUser: viewingSubscription.notifyUser,
+            currency: viewingSubscription.currency,
+            logoUrl: viewingSubscription.logoUrl,
+            categoryId: viewingSubscription.categoryId,
+            paymentMethodId: viewingSubscription.paymentMethodId,
+            billingCycle: viewingSubscription.billingCycle,
+            subscriptionTypeId: viewingSubscription.subscriptionTypeId,
+        };
+
+        await updateSubscription(viewingSubscription.id, updatedData);
+
+        // Update the viewingSubscription state to reflect the change
+        setViewingSubscription({
+            ...viewingSubscription,
+            active: !viewingSubscription.active,
+        });
+
         await refreshCurrentPage();
     };
 
@@ -250,6 +292,8 @@ export function SubscriptionsPageContent() {
                     <SubscriptionDetailsView
                         subscription={viewingSubscription}
                         onEdit={handleEditFromDetails}
+                        onToggleActive={handleToggleActive}
+                        onDelete={() => handleDelete(viewingSubscription)}
                         onClose={closeModal}
                     />
                 ) : modalStep === "picker" ? (
@@ -281,6 +325,16 @@ export function SubscriptionsPageContent() {
                     />
                 )}
             </Modal>
+
+            <DeleteConfirmationModal
+                isOpen={isDeleteModalOpen}
+                subscriptionName={subscriptionToDelete?.name ?? ""}
+                onConfirm={handleConfirmDelete}
+                onCancel={() => {
+                    setIsDeleteModalOpen(false);
+                    setSubscriptionToDelete(null);
+                }}
+            />
         </>
     );
 }

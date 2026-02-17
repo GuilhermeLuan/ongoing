@@ -139,21 +139,32 @@ export const calculateNextPaymentDate = (
 };
 
 /**
- * Get category name from category ID.
- * Returns "Sem categoria" if no category is provided.
+ * Get category name from subscription.
+ * Prefers categoryName from backend, falls back to ID lookup for backwards compatibility.
  */
-export const getCategoryName = (categoryId: number | null): string => {
-    if (!categoryId) return "Sem categoria";
-    const category = categoryOptions.find(c => c.value === categoryId.toString());
-    return category?.label ?? "Desconhecida";
+export const getCategoryName = (subscription: { categoryId: number | null; categoryName?: string | null }): string => {
+    // Prefer backend-provided name (source of truth)
+    if (subscription.categoryName) return subscription.categoryName;
+
+    // Fallback to ID lookup (backwards compatibility)
+    if (!subscription.categoryId) return "Sem categoria";
+    const category = categoryOptions.find(c => c.value === subscription.categoryId.toString());
+    return category?.label ?? "Sem categoria";
 };
 
 /**
- * Get payment method name from payment method ID.
- * Returns "Não informado" if no payment method is provided.
+ * Get payment method name from subscription.
+ * Prefers paymentMethodName from backend, falls back to ID lookup for backwards compatibility.
  */
-export const getPaymentMethodName = (paymentMethodId: number | null): string => {
-    if (!paymentMethodId) return "Não informado";
-    const method = paymentMethodOptions.find(m => m.value === paymentMethodId.toString());
-    return method?.label ?? "Desconhecido";
+export const getPaymentMethodName = (subscription: {
+    paymentMethodId: number | null;
+    paymentMethodName?: string | null
+}): string => {
+    // Prefer backend-provided name (source of truth)
+    if (subscription.paymentMethodName) return subscription.paymentMethodName;
+
+    // Fallback to ID lookup (backwards compatibility)
+    if (!subscription.paymentMethodId) return "Não informado";
+    const method = paymentMethodOptions.find(m => m.value === subscription.paymentMethodId.toString());
+    return method?.label ?? "Não informado";
 };

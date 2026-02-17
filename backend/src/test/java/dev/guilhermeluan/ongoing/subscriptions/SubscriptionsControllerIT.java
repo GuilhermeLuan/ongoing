@@ -191,11 +191,6 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                         "Start date is required"
                 ),
                 Arguments.of(
-                        "Next payment date is null",
-                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), now, null, true, true, Currency.BRL, null, null, null, BillingCycle.MONTHLY, null),
-                        "Next payment date is required"
-                ),
-                Arguments.of(
                         "Logo URL exceeds 255 characters",
                         new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), now, nextMonth, true, true, Currency.BRL, "L".repeat(256), null, null, BillingCycle.MONTHLY, null),
                         "Logo URL must be at most 255 characters"
