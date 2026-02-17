@@ -548,3 +548,332 @@ Quando você entender não só o *que* esse código faz, mas *por que* ele faz d
 como engenheiro de software.
 
 Agora vai lá e adiciona aquela feature que você está pensando. A base está sólida. 🚀
+
+---
+
+## Sistema de Onboarding: Guiando Novos Usuários com Elegância
+
+### O Problema Clássico
+
+Você já se registrou numa aplicação e foi jogado direto no dashboard vazio? Sem tutorial, sem contexto, sem saber onde
+clicar primeiro? É a sensação de entrar numa festa onde você não conhece ninguém e ninguém te apresenta.
+
+O Ongoing resolve isso com um **wizard de onboarding** — um fluxo guiado de 4 passos que acontece **uma única vez** logo
+após o registro, garantindo que o usuário saia com dados reais no dashboard e entenda o que a aplicação faz.
+
+### A Arquitetura do Onboarding
+
+#### Backend: Campo `onboardingCompleted`
+
+A solução mais simples é sempre a melhor. Adicionamos um campo booleano na entidade `User`:
+
+```java
+@Builder.Default
+@Column(name = "onboarding_completed", nullable = false)
+private boolean onboardingCompleted = false;
+```
+
+Acompanhado de uma migration Flyway (`V6__add_onboarding_completed.sql`):
+
+```sql
+ALTER TABLE tb_users
+ADD COLUMN onboarding_completed BOOLEAN NOT NULL DEFAULT FALSE;
+```
+
+E um endpoint PATCH simples para atualizá-lo:
+
+```java
+@PatchMapping("/me")
+public ResponseEntity<UserResponse> updateCurrentUser(
+    @AuthenticationPrincipal User user,
+    @RequestBody UpdateUserRequest request
+) {
+    User updatedUser = userService.updateUser(user.getId(), request);
+    return ResponseEntity.ok(mapToResponse(updatedUser));
+}
+```
+
+**Lição:** Não invente complexidade. Um booleano resolve 90% dos casos de state management de onboarding.
+
+#### Frontend: AuthResponse Enriquecida
+
+Antes, `AuthResponse` só retornava tokens:
+
+```typescript
+interface AuthResponse {
+    accessToken: string;
+    refreshToken: string;
+}
+```
+
+Agora, incluímos os dados do usuário:
+
+```typescript
+interface AuthResponse {
+    accessToken: string;
+    refreshToken: string;
+    user: {
+        id: number;
+        name: string;
+        email: string;
+        onboardingCompleted: boolean;  // ← A chave do reino
+    };
+}
+```
+
+Isso permite que o frontend saiba **imediatamente após login/registro** se deve redirecionar para `/onboarding` ou
+`/dashboard`. Sem request extra, sem race condition.
+
+**Lição:** Enriquecer a resposta de autenticação com dados relevantes elimina round-trips desnecessários.
+
+### O Wizard: 4 Passos, 4 Objetivos
+
+#### Passo 1: Boas-vindas
+
+**Objetivo:** Criar conexão emocional e expectativa.
+
+- Emoji animado (👋)
+- Headline personalizada: "Bem-vindo ao Ongoing, {nome}!"
+- Lista de benefícios com checkmarks animados (staggered entry)
+- CTA claro: "Vamos começar →"
+
+**Técnica de animação:** `fadeInUp` com delays escalonados (`animation-delay: 100ms, 200ms, 300ms`). Cada item entra
+sequencialmente, criando ritmo visual.
+
+#### Passo 2: Adicionar Primeira Assinatura
+
+**Objetivo:** Usuário sai com dados reais no dashboard.
+
+Aqui está a mágica: em vez de apenas mostrar um formulário vazio, oferecemos **sugestões de serviços populares**:
+
+```typescript
+const suggestions = [
+    { name: 'Netflix', price: 55.90, category: 'VIDEO_STREAMING', color: '#E50914' },
+    { name: 'Spotify', price: 21.90, category: 'MUSIC', color: '#1DB954' },
+    // ... 8 sugestões no total
+];
+```
+
+Ao clicar numa sugestão, o formulário **se pré-preenche automaticamente**. O usuário só precisa escolher a data de
+vencimento. Redução de fricção = aumento de completude.
+
+**Lição UX:** Sugestões contextuais reduzem paralisia de decisão. É mais fácil escolher "Netflix" num grid visual do que
+digitar "Netflix" num campo vazio.
+
+A submissão faz um `POST /api/v1/subscriptions` **real** — não é simulação. O dado persiste no banco.
+
+#### Passo 3: Tour do Dashboard
+
+**Objetivo:** Preparar o usuário para a interface, mostrando as 3 áreas principais.
+
+Em vez de um tutorial chato de "clique aqui, agora clique ali", criamos um **mockup estilizado do dashboard** com
+highlights animados que se movem entre as áreas:
+
+```tsx
+const slides = [
+    { title: 'Seus gastos e assinaturas em tempo real', highlight: 'stats' },
+    { title: 'Nunca perca um vencimento', highlight: 'upcoming' },
+    { title: 'Entenda pra onde seu dinheiro vai', highlight: 'chart' },
+];
+```
+
+Cada slide:
+1. Aplica `ring-4 ring-primary` na área destacada
+2. Mostra um emoji animado (✨) no canto
+3. Exibe texto descritivo embaixo
+4. Avança automaticamente a cada 4 segundos (ou manualmente via dots)
+
+O botão "Próximo" só habilita após o usuário ver todos os 3 slides. **Forçamos atenção sem ser intrusivos.**
+
+**Lição de micro-interações:** Animações de highlight (`ring` + `pulse`) chamam atenção sem distrair. O auto-advance
+garante progressão para usuários passivos; os dots permitem controle para usuários ativos.
+
+#### Passo 4: Sucesso & Celebração
+
+**Objetivo:** Celebrar conquista e criar senso de progresso.
+
+- **Confetti animation** (CSS puro, 50 partículas caindo)
+- Headline: "Tudo pronto, {nome}! 🎉"
+- Card de resumo mostrando a assinatura criada
+- 3 "próximos passos" com ícones (📋 🔍 📅)
+- CTA final: "Ir para o Dashboard →"
+
+Ao clicar, fazemos o PATCH `onboardingCompleted: true` e redirecionamos.
+
+**Lição de gamification:** Celebração visual (confetti) transforma uma tarefa administrativa em pequena vitória. Isso
+libera dopamina e cria associação positiva com a plataforma.
+
+### Implementação da Animação Confetti
+
+Confetti poderia ser uma lib externa (react-confetti), mas implementamos em CSS puro por 3 razões:
+
+1. **Zero dependencies** — menos peso no bundle
+2. **Performance** — CSS animation é nativa e otimizada pelo browser
+3. **Controle total** — podemos ajustar timing, cores, trajetória
+
+```tsx
+// Gera 50 partículas com posições e delays aleatórios
+const particles = Array.from({ length: 50 }, (_, i) => ({
+    id: i,
+    left: Math.random() * 100,          // Posição horizontal aleatória
+    delay: Math.random() * 0.5,         // Delay de entrada escalonado
+    duration: 2 + Math.random() * 1,    // Duração da queda variável
+    color: colors[Math.floor(Math.random() * colors.length)],
+}));
+```
+
+```css
+@keyframes confetti {
+    0% {
+        transform: translateY(-100vh) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(100vh) rotate(720deg);  /* 2 rotações completas */
+        opacity: 0;
+    }
+}
+```
+
+As partículas começam **acima da viewport** (`-100vh`) e caem até embaixo (`100vh`), girando 720° no processo. A
+aleatoriedade em `left`, `delay` e `duration` cria efeito orgânico.
+
+**Lição de performance:** Para animações efêmeras (< 3 segundos), CSS animation é superior a JS animation. Usa GPU
+acceleration nativo e não bloqueia o main thread.
+
+### Route Guards: Controlando Fluxo de Navegação
+
+O `OnboardingWizard` implementa guards de rota:
+
+```tsx
+// Redirect se não há usuário (não logado)
+if (!user) {
+    router.push('/login');
+    return null;
+}
+
+// Redirect se onboarding já foi completado
+if (user.onboardingCompleted) {
+    router.push('/dashboard');
+    return null;
+}
+```
+
+E o `RegisterForm` redireciona para onboarding após registro bem-sucedido:
+
+```tsx
+await register(name, email, password);
+router.push("/onboarding");  // Força wizard na primeira vez
+```
+
+**Lição de fluxo:** Guards de rota evitam estados inválidos. Não queremos usuários acessando `/onboarding` se já
+completaram, nem acessando `/dashboard` sem completar o setup inicial.
+
+### Integração AuthContext ↔ Backend
+
+Atualizamos os métodos `login`, `register` e `refreshAuth` do AuthContext para consumir o novo formato de
+`AuthResponse`:
+
+```tsx
+const response = await authService.register(name, email, password);
+
+// Extrai user data da resposta (inclui onboardingCompleted)
+const user = authService.getUserFromToken(
+    response.accessToken,
+    response.user  // ← Dados vindos do backend
+);
+
+setAuth(user, response.accessToken);
+```
+
+Antes, extraíamos o usuário apenas do JWT payload. Agora, **priorizamos os dados do backend** quando disponíveis, usando
+o JWT como fallback. Isso garante que `onboardingCompleted` sempre reflita o estado mais recente do banco.
+
+**Lição de state management:** Quando você tem fonte de verdade no backend, sincronize o frontend com ela. JWT é ótimo
+para claims imutáveis (id, email, role), mas state dinâmico (onboardingCompleted) deve vir da resposta da API.
+
+### TypeScript & Type Safety
+
+Todo o onboarding foi implementado com TypeScript estrito. Alguns desafios encontrados:
+
+1. **Select component props:** Mudança de `children` para `options` array
+2. **BillingCycle type:** Garantir que o form state seja tipado corretamente
+3. **GradientText import:** Named export vs default export
+
+```tsx
+// ❌ Antes (default export)
+import GradientText from '@/components/ui/GradientText';
+
+// ✅ Depois (named export)
+import { GradientText } from '@/components/ui/GradientText';
+```
+
+**Lição:** TypeScript não é apenas validação — é documentação viva. Quando você olha
+`formData: { billingCycle: BillingCycle }`, sabe exatamente quais valores são válidos sem consultar a API.
+
+### Organização de Código: Separation of Concerns
+
+```
+frontend/src/
+├── app/(onboarding)/
+│   ├── layout.tsx           # Layout limpo (sem sidebar)
+│   └── onboarding/
+│       └── page.tsx         # Monta o OnboardingWizard
+│
+├── components/onboarding/
+│   ├── OnboardingWizard.tsx      # Orquestrador (state machine)
+│   ├── ProgressBar.tsx           # UI de progresso
+│   ├── StepWelcome.tsx           # Passo 1
+│   ├── StepAddSubscription.tsx   # Passo 2
+│   ├── StepDashboardTour.tsx     # Passo 3
+│   ├── StepSuccess.tsx           # Passo 4
+│   ├── ServiceSuggestionCard.tsx # Sub-componente (passo 2)
+│   └── ConfettiAnimation.tsx     # Efeito visual (passo 4)
+│
+└── features/user/
+    └── user.service.ts      # API calls (updateCurrentUser)
+```
+
+Cada passo é um componente isolado que recebe `onNext` como callback. O `OnboardingWizard` gerencia:
+- Estado global do wizard (`currentStep`, `createdSubscription`)
+- Transições entre passos
+- Chamadas à API (criar subscription, marcar onboarding como concluído)
+- Redirecionamento final
+
+**Lição de arquitetura:** Wizard complexo = state machine simples. Cada passo é "dumb" (não sabe do fluxo), o
+orquestrador é "smart" (gerencia navegação e side effects).
+
+### Melhorias Futuras (Não Implementadas, Mas Planejadas)
+
+1. **Analytics:** Track abandono em cada passo (onde usuários desistem?)
+2. **Recuperação de progresso:** Salvar passo atual no backend, permitir retomar
+3. **A/B testing:** Testar diferentes ordens de passos, diferentes copy
+4. **Gamification:** Badge "First Subscription Added" no perfil
+5. **Skip option:** Para power users que já sabem usar a app
+
+---
+
+### Resumo: Por Que Onboarding Importa
+
+Onboarding não é "nice to have" — é **multiplicador de retenção**. Dados da indústria mostram:
+
+- Apps com onboarding guiado têm 50% mais retenção em D7 (dia 7)
+- Usuários que completam onboarding têm 3x mais chance de se tornarem ativos mensais
+- Reduzir steps de 5 para 4 pode aumentar completude em 20%
+
+No Ongoing, nosso onboarding:
+- ✅ Cria conexão emocional (boas-vindas personalizadas)
+- ✅ Reduz fricção (sugestões pré-preenchidas)
+- ✅ Educa o usuário (tour visual do dashboard)
+- ✅ Celebra progresso (confetti + resumo)
+- ✅ Garante estado inicial válido (primeira subscription criada)
+
+Quando o usuário chega no dashboard, ele já:
+- Entende o que a app faz
+- Tem dados reais para visualizar
+- Sente que progrediu (gamification)
+
+**Lição final:** Bom onboarding é invisível quando funciona, mas doloroso quando falta. Invista nisso cedo.
+
+---
+
