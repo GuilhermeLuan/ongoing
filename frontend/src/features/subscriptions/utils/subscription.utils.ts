@@ -148,7 +148,7 @@ export const getCategoryName = (subscription: { categoryId: number | null; categ
 
     // Fallback to ID lookup (backwards compatibility)
     if (!subscription.categoryId) return "Sem categoria";
-    const category = categoryOptions.find(c => c.value === subscription.categoryId.toString());
+    const category = categoryOptions.find(c => c.value === subscription.categoryId?.toString());
     return category?.label ?? "Sem categoria";
 };
 
@@ -165,6 +165,6 @@ export const getPaymentMethodName = (subscription: {
 
     // Fallback to ID lookup (backwards compatibility)
     if (!subscription.paymentMethodId) return "Não informado";
-    const method = paymentMethodOptions.find(m => m.value === subscription.paymentMethodId.toString());
+    const method = paymentMethodOptions.find(m => m.value === subscription.paymentMethodId?.toString());
     return method?.label ?? "Não informado";
 };

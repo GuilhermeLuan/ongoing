@@ -267,5 +267,7 @@ export function toSubscriptionResponse(
         paymentMethodId: null,
         billingCycle: subscription.billingCycle,
         subscriptionTypeId: null,
+        categoryName: null,
+        paymentMethodName: null,
     };
 }

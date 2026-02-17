@@ -139,17 +139,18 @@ export function SubscriptionsPageContent() {
 
         const updatedData: SubscriptionRequest = {
             name: viewingSubscription.name,
-            description: viewingSubscription.description,
+            description: viewingSubscription.description ?? undefined,
             value: viewingSubscription.value,
             startDate: viewingSubscription.startDate,
+            nextPaymentDate: viewingSubscription.nextPaymentDate,
             active: !viewingSubscription.active, // Toggle the active status
             notifyUser: viewingSubscription.notifyUser,
             currency: viewingSubscription.currency,
-            logoUrl: viewingSubscription.logoUrl,
-            categoryId: viewingSubscription.categoryId,
-            paymentMethodId: viewingSubscription.paymentMethodId,
+            logoUrl: viewingSubscription.logoUrl ?? undefined,
+            categoryId: viewingSubscription.categoryId ?? undefined,
+            paymentMethodId: viewingSubscription.paymentMethodId ?? undefined,
             billingCycle: viewingSubscription.billingCycle,
-            subscriptionTypeId: viewingSubscription.subscriptionTypeId,
+            subscriptionTypeId: viewingSubscription.subscriptionTypeId ?? undefined,
         };
 
         await updateSubscription(viewingSubscription.id, updatedData);
