@@ -1,12 +1,13 @@
-import { AppHeader, StatCard, SubscriptionCard } from "@/components/app";
-import { Button } from "@/components/ui";
+import {AppHeader, StatCard, SubscriptionCard} from "@/components/app";
+import {Button} from "@/components/ui";
 import {
-  mockStats,
-  mockSubscriptions,
+  categoryColors,
+  categoryLabels,
   formatCurrency,
   getUpcomingBillings,
-  categoryLabels,
-  categoryColors,
+  mockStats,
+  mockSubscriptions,
+  toSubscriptionResponse,
 } from "@/lib/mock-data";
 
 export const metadata = {
@@ -14,7 +15,9 @@ export const metadata = {
 };
 
 export default function DashboardPage() {
-  const upcomingBillings = getUpcomingBillings(mockSubscriptions, 5);
+    const upcomingBillings = getUpcomingBillings(mockSubscriptions, 5).map(
+        toSubscriptionResponse
+    );
 
   return (
     <>

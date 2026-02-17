@@ -58,10 +58,13 @@ public class SubscriptionsService {
         subscriptionsRepository.deleteById(id);
     }
 
-    public Subscriptions update(Long id, Subscriptions subscriptionToUpdate, Long userId) {
-        Subscriptions existingSubscription = findByIdOrThrowNotFoundException(id, userId);
-        subscriptionToUpdate.setId(existingSubscription.getId());
-        return subscriptionsRepository.save(subscriptionToUpdate);
+    public Subscriptions update(Long id, Subscriptions subscription, Long userId) {
+        findByIdOrThrowNotFoundException(id, userId);
+
+        LocalDate nextBillingDate = calculateNextBillingDate(subscription);
+        subscription.setNextPaymentDate(nextBillingDate);
+
+        return subscriptionsRepository.save(subscription);
     }
 
     public List<Subscriptions> findActiveByUserId(Long userId) {
