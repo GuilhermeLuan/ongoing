@@ -5,10 +5,7 @@ import dev.guilhermeluan.ongoing.auth.dto.AuthResponse;
 import dev.guilhermeluan.ongoing.auth.dto.RegisterRequest;
 import dev.guilhermeluan.ongoing.config.BaseIntegrationTest;
 import dev.guilhermeluan.ongoing.subscriptions.dto.SubscriptionRequestDto;
-import dev.guilhermeluan.ongoing.subscriptions.entities.BillingCycle;
-import dev.guilhermeluan.ongoing.subscriptions.entities.Category;
-import dev.guilhermeluan.ongoing.subscriptions.entities.Currency;
-import dev.guilhermeluan.ongoing.subscriptions.entities.Subscriptions;
+import dev.guilhermeluan.ongoing.subscriptions.entities.*;
 import dev.guilhermeluan.ongoing.user.RefreshTokenRepository;
 import dev.guilhermeluan.ongoing.user.User;
 import dev.guilhermeluan.ongoing.user.UserRepository;
@@ -83,16 +80,23 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
         assertThatJson(response).node("content[0].name").isEqualTo("Netflix");
         assertThatJson(response).node("content[0].description").isEqualTo("Netflix mensal");
         assertThatJson(response).node("content[0].value").isEqualTo(39.95);
+        assertThatJson(response).node("content[0].categoryName").isEqualTo("Video Streaming");
+        assertThatJson(response).node("content[0].paymentMethodName").isEqualTo("Credit Card");
 
         assertThatJson(response).node("content[1].id").isNotNull().isNumber();
         assertThatJson(response).node("content[1].name").isEqualTo("Spotify");
         assertThatJson(response).node("content[1].description").isEqualTo("Spotify mensal");
         assertThatJson(response).node("content[1].value").isEqualTo(19.95);
+        assertThatJson(response).node("content[1].categoryName").isEqualTo("Video Streaming");
+        assertThatJson(response).node("content[1].paymentMethodName").isEqualTo("Credit Card");
     }
 
     @Test
     void findById_ShouldReturnOneSubscriptionById() {
-        var subscription = insertSampleSubscriptions().getFirst();
+        Category videoStreaming = Category.builder().id(1L).build();
+        PaymentMethod paymentMethod = PaymentMethod.builder().id(1L).build();
+        Subscriptions subscription = subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), true, videoStreaming, paymentMethod));
+
 
         String response = given().contentType(ContentType.JSON)
                 .header("Authorization", "Bearer " + authToken)
@@ -105,6 +109,9 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
         assertThatJson(response).node("name").isEqualTo(subscription.getName());
         assertThatJson(response).node("description").isEqualTo(subscription.getDescription());
         assertThatJson(response).node("value").isEqualTo(subscription.getValue());
+        assertThatJson(response).node("categoryName").isNotNull();
+        assertThatJson(response).node("paymentMethodName").isNotNull();
+
     }
 
     @Test
@@ -390,10 +397,30 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
     }
 
     private List<Subscriptions> insertSampleSubscriptions() {
-        Subscriptions subscriptions = subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), LocalDate.now(), LocalDate.now().plusMonths(1), BillingCycle.MONTHLY, authenticatedUser));
-        Subscriptions subscriptions1 = subscriptionsRepository.save(createSubscription("Spotify", new BigDecimal("19.95"), LocalDate.now().minusDays(10), LocalDate.now().plusMonths(1), BillingCycle.MONTHLY, authenticatedUser));
+        Category category = Category.builder().id(1L).build();
+        PaymentMethod paymentMethod = PaymentMethod.builder().id(1L).build();
+
+        Subscriptions subscriptions = subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), LocalDate.now(), LocalDate.now().plusMonths(1), BillingCycle.MONTHLY, authenticatedUser, category, paymentMethod));
+        Subscriptions subscriptions1 = subscriptionsRepository.save(createSubscription("Spotify", new BigDecimal("19.95"), LocalDate.now().minusDays(10), LocalDate.now().plusMonths(1), BillingCycle.MONTHLY, authenticatedUser, category, paymentMethod));
 
         return List.of(subscriptions, subscriptions1);
+    }
+
+    private Subscriptions createSubscription(String name, BigDecimal value, LocalDate startDate, LocalDate nextPaymentDate, BillingCycle billingCycle, User user, Category category, PaymentMethod paymentMethod) {
+        return Subscriptions.builder()
+                .name(name)
+                .description(name + " mensal")
+                .value(value)
+                .startDate(startDate)
+                .nextPaymentDate(nextPaymentDate)
+                .billingCycle(billingCycle)
+                .currency(Currency.BRL)
+                .category(category)
+                .paymentMethod(paymentMethod)
+                .notify(true)
+                .active(true)
+                .user(user)
+                .build();
     }
 
     private Subscriptions createSubscription(String name, BigDecimal value, LocalDate startDate, LocalDate nextPaymentDate, BillingCycle billingCycle, User user) {
@@ -424,6 +451,23 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                 .active(active)
                 .category(category)
                 .user(authenticatedUser)
+                .build();
+    }
+
+    private Subscriptions createSubscription(String name, BigDecimal value, boolean active, Category category, PaymentMethod paymentMethod) {
+        return Subscriptions.builder()
+                .name(name)
+                .description(name + " mensal")
+                .value(value)
+                .startDate(LocalDate.now())
+                .nextPaymentDate(LocalDate.now().plusMonths(1))
+                .billingCycle(BillingCycle.MONTHLY)
+                .currency(Currency.BRL)
+                .notify(true)
+                .active(active)
+                .category(category)
+                .user(authenticatedUser)
+                .paymentMethod(paymentMethod)
                 .build();
     }
 
@@ -477,6 +521,7 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                 .queryParam("categoryId", 1)
                 .when().get(API_URL)
                 .then()
+                .log().all()
                 .statusCode(HttpStatus.OK.value())
                 .extract().body().asString();
 

@@ -18,6 +18,8 @@ public interface SubscriptionsMapper {
     @Mapping(source = "category.id", target = "categoryId")
     @Mapping(source = "paymentMethod.id", target = "paymentMethodId")
     @Mapping(source = "subscriptionType.id", target = "subscriptionTypeId")
+    @Mapping(source = "category.name", target = "categoryName")
+    @Mapping(source = "paymentMethod.name", target = "paymentMethodName")
     SubscriptionResponseDto toSubscriptionResponse(Subscriptions subscription);
 
     List<SubscriptionResponseDto> toSubscriptionResponse(List<Subscriptions> subscriptions);
