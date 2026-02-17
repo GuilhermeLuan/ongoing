@@ -11,12 +11,15 @@ import { Button } from '@/components/ui';
 import { useDashboard } from '@/features/dashboard';
 import { useSubscriptions } from '@/features/subscriptions';
 import { formatCurrency } from '@/lib/mock-data';
-import { useAuth } from '@/features/auth';
+import { useAuth, getFirstName } from '@/features/auth';
 
 export function DashboardContent() {
   const { dashboard, isLoading, error } = useDashboard();
   const { subscriptions, page } = useSubscriptions();
   const { user } = useAuth();
+
+  // Extract first name from user's full name
+  const firstName = getFirstName(user?.name);
 
   // Show loading state
   if (isLoading) {
@@ -96,7 +99,7 @@ export function DashboardContent() {
         {/* Welcome */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-neutral-900 font-display">
-            Olá, {user?.name || 'Usuário'}
+            Olá, {firstName || 'Usuário'}!
           </h1>
           <p className="text-neutral-500 mt-1">
             Aqui está um resumo das suas assinaturas.
