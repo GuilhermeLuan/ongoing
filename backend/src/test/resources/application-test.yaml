@@ -16,3 +16,6 @@ security:
 exchange:
   api:
     url: http://mock-exchange-api.test
+resend:
+  api_key: re_test_key
+  from_email: test@example.com

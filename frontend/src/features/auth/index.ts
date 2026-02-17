@@ -22,6 +22,7 @@ export {apiClient, registerAuthCallbacks} from './services/api-client';
 
 // Utilities
 export {tokenStorage} from './utils/token-storage';
+export {getFirstName} from './utils/user-utils';
 
 // Types
 export type {

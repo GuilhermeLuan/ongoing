@@ -21,8 +21,10 @@ export function Hero() {
       />
 
       {/* Decorative elements */}
-      <div className="absolute top-20 left-10 w-72 h-72 bg-primary-200 rounded-full blur-3xl opacity-30 animate-float" />
-      <div className="absolute bottom-20 right-10 w-96 h-96 bg-accent-200 rounded-full blur-3xl opacity-20 animate-float animation-delay-300" />
+        <div
+            className="pointer-events-none absolute left-4 top-20 h-40 w-40 rounded-full bg-primary-200 opacity-20 blur-xl md:left-10 md:h-72 md:w-72 md:opacity-30 md:blur-3xl md:animate-float"/>
+        <div
+            className="pointer-events-none absolute bottom-20 right-4 h-48 w-48 rounded-full bg-accent-200 opacity-15 blur-xl md:right-10 md:h-96 md:w-96 md:opacity-20 md:blur-3xl md:animate-float md:animation-delay-300"/>
 
       <Container>
         <div ref={ref} className="grid lg:grid-cols-2 gap-12 items-center">
@@ -76,7 +78,7 @@ export function Hero() {
             )}
           >
             <div className="absolute inset-0 bg-gradient-to-tr from-primary-500/20 to-accent-500/20 rounded-3xl blur-2xl -z-10 scale-95" />
-            <DashboardPreview className="animate-float" />
+              <DashboardPreview className="md:animate-float"/>
           </div>
         </div>
       </Container>
