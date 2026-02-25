@@ -467,6 +467,46 @@ O conserto foi simples, mas certeiro: adicionamos um `useRef` chamado `refreshAt
 
 ---
 
+## Correção Quentinha: 401 no `/auth/refresh` virando cascata
+
+Na issue #83 apareceu um sintoma traiçoeiro: quando o refresh token já estava inválido/expirado, o frontend recebia 401
+em `/auth/refresh` e entrava num fluxo confuso (nova tentativa automática de refresh no próprio endpoint de refresh).
+
+A causa raiz estava no interceptor global de 401: ele tratava qualquer 401 como candidato a "tentar refresh de novo",
+inclusive requests de auth (`/auth/login`, `/auth/register`, `/auth/refresh`). Isso é perigoso porque o endpoint de
+refresh deve ser terminal: se ele falhou com 401, não existe outro refresh para tentar.
+
+O ajuste foi separar responsabilidades:
+
+- endpoints de auth continuam sem injeção de token no request interceptor;
+- no response interceptor, 401 de endpoint de auth **não** dispara refresh automático;
+- refresh automático continua só para endpoints protegidos de negócio;
+- adicionamos testes para garantir esse comportamento e evitar regressão.
+
+Lição prática: um interceptor "global demais" costuma criar loops e efeitos colaterais difíceis de enxergar. Em auth,
+endpoint de refresh precisa de tratamento explícito e caminho de falha bem definido.
+
+---
+
+## Ajuste de contrato: senha mínima alinhada entre frontend e backend
+
+Na revisão da integração auth, apareceu um desalinhamento pequeno, mas importante: o backend exige senha com no mínimo 8
+caracteres no cadastro (`RegisterRequest`), enquanto o `RegisterForm` no frontend aceitava 6.
+
+Isso gerava uma experiência estranha: o formulário dizia "ok", mas o backend devolvia 400. Tecnicamente correto, UX
+ruim.
+
+A decisão foi manter a regra mais forte no backend (8) e alinhar o frontend para refletir o mesmo contrato, além de
+adicionar teste de formulário para garantir que:
+
+- senha com 7 caracteres não envia o cadastro;
+- senha com 8 caracteres envia normalmente.
+
+Lição prática: validação de formulário não é só detalhe de UI; ela precisa espelhar o contrato da API para evitar erro
+evitável e frustração do usuário.
+
+---
+
 ## Correção Quentinha: CORS para Frontend em Produção
 
 Outro bug clássico de deploy: tudo funciona localmente e quebra no navegador em produção com erro de CORS. O backend não

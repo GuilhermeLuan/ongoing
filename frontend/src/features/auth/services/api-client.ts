@@ -20,6 +20,12 @@ import type {AuthCallbacks} from '../types/auth.types';
  */
 let authCallbacks: AuthCallbacks | null = null;
 
+const AUTH_ENDPOINTS = [
+    API_ENDPOINTS.AUTH.LOGIN,
+    API_ENDPOINTS.AUTH.REGISTER,
+    API_ENDPOINTS.AUTH.REFRESH,
+];
+
 /**
  * Register auth callbacks for use by interceptors
  * Called by AuthContext during initialization
@@ -74,13 +80,7 @@ export const apiClient: AxiosInstance = axios.create({
 apiClient.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
         // Skip token injection for auth endpoints (login, register, refresh)
-        const authEndpoints = [
-            API_ENDPOINTS.AUTH.LOGIN,
-            API_ENDPOINTS.AUTH.REGISTER,
-            API_ENDPOINTS.AUTH.REFRESH,
-        ];
-
-        const isAuthEndpoint = authEndpoints.some((endpoint) =>
+        const isAuthEndpoint = AUTH_ENDPOINTS.some((endpoint) =>
             config.url?.includes(endpoint)
         );
 
@@ -115,9 +115,12 @@ apiClient.interceptors.response.use(
         const originalRequest = error.config as InternalAxiosRequestConfig & {
             _retry?: boolean;
         };
+        const isAuthEndpoint = AUTH_ENDPOINTS.some((endpoint) =>
+            originalRequest.url?.includes(endpoint)
+        );
 
         // Handle 401 Unauthorized
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
             // Prevent infinite loops
             originalRequest._retry = true;
 
