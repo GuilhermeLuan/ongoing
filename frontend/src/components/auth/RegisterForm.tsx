@@ -42,8 +42,8 @@ export function RegisterForm() {
 
         if (!password) {
             newErrors.password = "Senha é obrigatória";
-        } else if (password.length < 6) {
-            newErrors.password = "Senha deve ter no mínimo 6 caracteres";
+        } else if (password.length < 8) {
+            newErrors.password = "Senha deve ter no mínimo 8 caracteres";
         }
 
         if (!confirmPassword) {

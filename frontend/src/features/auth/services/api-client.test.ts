@@ -9,6 +9,20 @@ import {apiClient, registerAuthCallbacks} from './api-client';
 import {API_ENDPOINTS} from '@/lib/constants';
 import type {AuthCallbacks} from '../types/auth.types';
 
+const getResponseRejectedInterceptor = () => {
+    const handlers = (apiClient.interceptors.response as unknown as {
+        handlers: Array<{ rejected?: (error: unknown) => Promise<unknown> }>;
+    }).handlers;
+
+    const rejected = handlers[0]?.rejected;
+
+    if (!rejected) {
+        throw new Error('Response rejected interceptor not found');
+    }
+
+    return rejected;
+};
+
 describe('apiClient', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -72,6 +86,44 @@ describe('apiClient', () => {
 
         it('should have response interceptor configured', () => {
             expect(apiClient.interceptors.response).toBeDefined();
+        });
+
+        it('should not trigger refresh flow for 401 from /auth/refresh', async () => {
+            const callbacks: AuthCallbacks = {
+                getAccessToken: vi.fn(() => null),
+                refreshToken: vi.fn(async () => false),
+                logout: vi.fn(),
+            };
+            registerAuthCallbacks(callbacks);
+
+            const rejected = getResponseRejectedInterceptor();
+            const refreshEndpointError = {
+                config: {url: API_ENDPOINTS.AUTH.REFRESH, headers: {}},
+                response: {status: 401},
+            };
+
+            await expect(rejected(refreshEndpointError)).rejects.toBe(refreshEndpointError);
+            expect(callbacks.refreshToken).not.toHaveBeenCalled();
+            expect(callbacks.logout).not.toHaveBeenCalled();
+        });
+
+        it('should trigger refresh flow for 401 from protected endpoints', async () => {
+            const callbacks: AuthCallbacks = {
+                getAccessToken: vi.fn(() => null),
+                refreshToken: vi.fn(async () => false),
+                logout: vi.fn(),
+            };
+            registerAuthCallbacks(callbacks);
+
+            const rejected = getResponseRejectedInterceptor();
+            const protectedEndpointError = {
+                config: {url: '/subscriptions', headers: {}},
+                response: {status: 401},
+            };
+
+            await expect(rejected(protectedEndpointError)).rejects.toBe(protectedEndpointError);
+            expect(callbacks.refreshToken).toHaveBeenCalledTimes(1);
+            expect(callbacks.logout).toHaveBeenCalledTimes(1);
         });
     });
 
