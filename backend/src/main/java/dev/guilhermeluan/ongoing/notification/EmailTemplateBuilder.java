@@ -180,7 +180,7 @@ public class EmailTemplateBuilder {
 
     private String formatCurrency(BigDecimal value, Currency currency) {
         Locale locale = switch (currency) {
-            case BRL -> Locale.of("pt", "BR");
+            case BRL -> new Locale("pt", "BR");
             case USD -> Locale.US;
             case EUR -> Locale.FRANCE;
         };

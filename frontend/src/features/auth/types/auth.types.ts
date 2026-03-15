@@ -13,6 +13,7 @@ export interface User {
     name: string;
     email: string;
     role: string;
+    onboardingCompleted: boolean;
 }
 
 /**
@@ -35,6 +36,12 @@ export interface JwtPayload {
 export interface AuthResponse {
     accessToken: string;
     refreshToken: string;
+    user: {
+        id: number;
+        name: string;
+        email: string;
+        onboardingCompleted: boolean;
+    };
 }
 
 /**

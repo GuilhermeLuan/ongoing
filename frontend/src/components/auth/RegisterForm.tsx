@@ -65,9 +65,8 @@ export function RegisterForm() {
 
         try {
             await register(name, email, password);
-            const redirect = searchParams.get("redirect");
-            const destination = redirect && redirect.startsWith("/") ? redirect : "/dashboard";
-            router.push(destination);
+            // Redirect to onboarding for new users
+            router.push("/onboarding");
         } catch {
             // Error is already set in AuthContext
         } finally {

@@ -113,8 +113,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                 // Call backend API
                 const response = await authService.register(name, email, password);
 
-                // Extract user from access token
-                const user = authService.getUserFromToken(response.accessToken);
+                // Extract user from response data (includes onboardingCompleted)
+                const user = authService.getUserFromToken(response.accessToken, response.user);
 
                 if (!user) {
                     throw new Error('Invalid access token received');
@@ -152,8 +152,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                 // Call backend API
                 const response = await authService.login(email, password);
 
-                // Extract user from access token
-                const user = authService.getUserFromToken(response.accessToken);
+                // Extract user from response data (includes onboardingCompleted)
+                const user = authService.getUserFromToken(response.accessToken, response.user);
 
                 if (!user) {
                     throw new Error('Invalid access token received');
@@ -210,8 +210,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             // Call backend API to refresh
             const response = await authService.refresh(refreshToken);
 
-            // Extract user from new access token
-            const user = authService.getUserFromToken(response.accessToken);
+            // Extract user from new access token and response data
+            const user = authService.getUserFromToken(response.accessToken, response.user);
 
             if (!user) {
                 console.error('Invalid access token received during refresh');

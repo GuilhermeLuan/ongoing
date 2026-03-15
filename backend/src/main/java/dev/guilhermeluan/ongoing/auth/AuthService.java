@@ -85,6 +85,14 @@ public class AuthService {
                 .build();
 
         refreshTokenRepository.save(refreshToken);
-        return new AuthResponse(accessToken, refreshToken.getToken());
+        
+        AuthResponse.UserData userData = new AuthResponse.UserData(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.isOnboardingCompleted()
+        );
+        
+        return new AuthResponse(accessToken, refreshToken.getToken(), userData);
     }
 }
