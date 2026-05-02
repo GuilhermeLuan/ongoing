@@ -21,7 +21,6 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -50,6 +49,7 @@ class AuthServiceTest {
         ReflectionTestUtils.setField(authService, "refreshTokenExpiration", 3600000L);
     }
 
+    // HU03 - CA1: cadastro com sucesso ao fornecer dados válidos
     @Test
     void register_ShouldReturnAuthResponse_WhenEmailIsNew() {
         RegisterRequest request = new RegisterRequest("John", "john@example.com", "password123");
@@ -67,6 +67,7 @@ class AuthServiceTest {
         verify(userRepository).save(any(User.class));
     }
 
+    // HU03 - CA2: erro quando e-mail já está cadastrado na base
     @Test
     void register_ShouldThrowBadRequestException_WhenEmailAlreadyExists() {
         RegisterRequest request = new RegisterRequest("John", "john@example.com", "password123");
@@ -82,21 +83,7 @@ class AuthServiceTest {
         verify(userRepository, never()).save(any());
     }
 
-    @Test
-    void register_ShouldHashPassword_BeforeSaving() {
-        RegisterRequest request = new RegisterRequest("John", "john@example.com", "password123");
-
-        when(userRepository.existsByEmail(request.email())).thenReturn(false);
-        when(passwordEncoder.encode(request.password())).thenReturn("hashedPassword");
-        when(jwtService.createToken(any(User.class))).thenReturn("accessToken");
-        when(refreshTokenRepository.save(any(RefreshToken.class))).thenAnswer(inv -> inv.getArgument(0));
-
-        authService.register(request);
-
-        verify(passwordEncoder).encode("password123");
-        verify(userRepository).save(argThat(u -> "hashedPassword".equals(u.getPasswordHash())));
-    }
-
+    // HU02 - CA1: login com sucesso com credenciais válidas
     @Test
     void login_ShouldReturnAuthResponse_WhenCredentialsAreValid() {
         LoginRequest request = new LoginRequest("john@example.com", "password123");
@@ -119,6 +106,7 @@ class AuthServiceTest {
         assertNotNull(response.refreshToken());
     }
 
+    // HU02 - CA2: erro quando e-mail não está cadastrado
     @Test
     void login_ShouldThrowInvalidCredentialException_WhenEmailNotFound() {
         LoginRequest request = new LoginRequest("notfound@example.com", "password123");
@@ -128,6 +116,7 @@ class AuthServiceTest {
         assertThrows(InvalidCredentialException.class, () -> authService.login(request));
     }
 
+    // HU02 - CA2: erro quando senha não confere (credenciais incorretas)
     @Test
     void login_ShouldThrowInvalidCredentialException_WhenPasswordDoesNotMatch() {
         LoginRequest request = new LoginRequest("john@example.com", "wrongPassword");

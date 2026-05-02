@@ -23,6 +23,7 @@ class UserServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    // HU02 - CA1 / HU03 - CA1: encontra usuário pelo e-mail para autenticação e cadastro
     @Test
     void findByEmail_ShouldReturnUser_WhenEmailExists() {
         String email = "john@example.com";
@@ -35,6 +36,7 @@ class UserServiceTest {
         assertEquals(user, result);
     }
 
+    // HU02 - CA2: usuário não encontrado resulta em erro de credenciais
     @Test
     void findByEmail_ShouldThrowNotFoundException_WhenEmailNotFound() {
         String email = "notfound@example.com";
