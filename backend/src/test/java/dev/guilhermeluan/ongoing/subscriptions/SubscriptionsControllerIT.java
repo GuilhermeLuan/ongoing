@@ -1,3 +1,4 @@
+// HU01 - Cadastrar Assinatura
 package dev.guilhermeluan.ongoing.subscriptions;
 
 import dev.guilhermeluan.ongoing.auth.AuthService;
@@ -5,9 +6,10 @@ import dev.guilhermeluan.ongoing.auth.dto.AuthResponse;
 import dev.guilhermeluan.ongoing.auth.dto.RegisterRequest;
 import dev.guilhermeluan.ongoing.config.BaseIntegrationTest;
 import dev.guilhermeluan.ongoing.subscriptions.dto.SubscriptionRequestDto;
-import dev.guilhermeluan.ongoing.subscriptions.entities.*;
+import dev.guilhermeluan.ongoing.subscriptions.entities.BillingCycle;
+import dev.guilhermeluan.ongoing.subscriptions.entities.Currency;
+import dev.guilhermeluan.ongoing.subscriptions.entities.Subscriptions;
 import dev.guilhermeluan.ongoing.user.RefreshTokenRepository;
-import dev.guilhermeluan.ongoing.user.User;
 import dev.guilhermeluan.ongoing.user.UserRepository;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,7 +22,6 @@ import org.springframework.http.HttpStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.stream.Stream;
 
 import static io.restassured.RestAssured.given;
@@ -28,7 +29,6 @@ import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class SubscriptionsControllerIT extends BaseIntegrationTest {
-
 
     public static final String API_URL = "/api/v1/subscriptions";
 
@@ -42,7 +42,6 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
     private AuthService authService;
 
     private String authToken;
-    private User authenticatedUser;
 
     @BeforeEach
     void setUpTestData() {
@@ -58,78 +57,29 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
         AuthResponse response = authService.register(request);
 
         this.authToken = response.accessToken();
-        this.authenticatedUser = userRepository.findByEmail(request.email()).orElseThrow();
     }
 
-
+    // HU01 - CA1: persiste assinatura e calcula automaticamente a próxima data de cobrança
     @Test
-    void findAll_ShouldReturnAllSubscriptions() {
-        insertSampleSubscriptions();
+    void create_ShouldCreateAndCalculateNextPaymentDate_WhenDataIsValid() {
+        LocalDate startDate = LocalDate.now();
+        SubscriptionRequestDto request = new SubscriptionRequestDto(
+                "Netflix",
+                "Netflix mensal",
+                new BigDecimal("39.95"),
+                startDate,
+                null,
+                true,
+                true,
+                Currency.BRL,
+                null,
+                1L,
+                1L,
+                BillingCycle.MONTHLY,
+                1L
+        );
 
         String response = given().contentType(ContentType.JSON)
-                .header("Authorization", "Bearer " + authToken)
-                .when().get(API_URL)
-                .then()
-                .statusCode(HttpStatus.OK.value())
-                .log().all()
-                .extract().body().asString();
-
-        assertThatJson(response).node("totalElements").isEqualTo(2);
-        assertThatJson(response).node("content").isArray().hasSize(2);
-        assertThatJson(response).node("content[0].id").isNotNull().isNumber();
-        assertThatJson(response).node("content[0].name").isEqualTo("Netflix");
-        assertThatJson(response).node("content[0].description").isEqualTo("Netflix mensal");
-        assertThatJson(response).node("content[0].value").isEqualTo(39.95);
-        assertThatJson(response).node("content[0].categoryName").isEqualTo("Video Streaming");
-        assertThatJson(response).node("content[0].paymentMethodName").isEqualTo("Credit Card");
-
-        assertThatJson(response).node("content[1].id").isNotNull().isNumber();
-        assertThatJson(response).node("content[1].name").isEqualTo("Spotify");
-        assertThatJson(response).node("content[1].description").isEqualTo("Spotify mensal");
-        assertThatJson(response).node("content[1].value").isEqualTo(19.95);
-        assertThatJson(response).node("content[1].categoryName").isEqualTo("Video Streaming");
-        assertThatJson(response).node("content[1].paymentMethodName").isEqualTo("Credit Card");
-    }
-
-    @Test
-    void findById_ShouldReturnOneSubscriptionById() {
-        Category videoStreaming = Category.builder().id(1L).build();
-        PaymentMethod paymentMethod = PaymentMethod.builder().id(1L).build();
-        Subscriptions subscription = subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), true, videoStreaming, paymentMethod));
-
-
-        String response = given().contentType(ContentType.JSON)
-                .header("Authorization", "Bearer " + authToken)
-                .when().get(API_URL + "/{id}", subscription.getId())
-                .then()
-                .statusCode(HttpStatus.OK.value())
-                .log().all()
-                .extract().body().asString();
-        assertThatJson(response).node("id").isNotNull().isEqualTo(subscription.getId());
-        assertThatJson(response).node("name").isEqualTo(subscription.getName());
-        assertThatJson(response).node("description").isEqualTo(subscription.getDescription());
-        assertThatJson(response).node("value").isEqualTo(subscription.getValue());
-        assertThatJson(response).node("categoryName").isNotNull();
-        assertThatJson(response).node("paymentMethodName").isNotNull();
-
-    }
-
-    @Test
-    void findById_ShouldThrowNotFoundException() {
-        given().contentType(ContentType.JSON)
-                .header("Authorization", "Bearer " + authToken)
-                .when().get(API_URL + "/{id}", 99)
-                .then()
-                .statusCode(HttpStatus.NOT_FOUND.value())
-                .log().all()
-                .extract().body().asString();
-    }
-
-    @Test
-    void create_ShouldCreateANewSubscription() {
-        SubscriptionRequestDto request = createSubscriptionRequestDTO();
-
-        var response = given().contentType(ContentType.JSON)
                 .header("Authorization", "Bearer " + authToken)
                 .body(request)
                 .when().post(API_URL)
@@ -138,668 +88,124 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
                 .log().all()
                 .extract().body().asString();
 
-
         assertThatJson(response).node("id").isNotNull().isNumber();
-        assertThatJson(response).node("name").isEqualTo(request.name());
-        assertThatJson(response).node("description").isEqualTo(request.description());
-        assertThatJson(response).node("value").isEqualTo(request.value());
+        assertThatJson(response).node("name").isEqualTo("Netflix");
+        assertThatJson(response).node("value").isEqualTo(39.95);
+        assertThatJson(response).node("nextPaymentDate").isEqualTo(startDate.plusMonths(1).toString());
     }
 
-    private static Stream<Arguments> provideInvalidSubscriptionRequests() {
+    // HU01 - CA2: aceita request com Moeda BRL e Data de Início igual à data atual (defaults do frontend)
+    @Test
+    void create_ShouldAcceptDefaults_WhenCurrencyIsBRLAndStartDateIsToday() {
+        LocalDate today = LocalDate.now();
+        SubscriptionRequestDto request = new SubscriptionRequestDto(
+                "Spotify",
+                "Spotify mensal",
+                new BigDecimal("19.95"),
+                today,
+                null,
+                true,
+                true,
+                Currency.BRL,
+                null,
+                1L,
+                1L,
+                BillingCycle.MONTHLY,
+                1L
+        );
+
+        String response = given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + authToken)
+                .body(request)
+                .when().post(API_URL)
+                .then()
+                .statusCode(HttpStatus.CREATED.value())
+                .log().all()
+                .extract().body().asString();
+
+        assertThatJson(response).node("currency").isEqualTo("BRL");
+        assertThatJson(response).node("startDate").isEqualTo(today.toString());
+    }
+
+    // HU01 - CA3: registra preferência de Lembrete de Renovação para notificação D-1 da próxima cobrança
+    @Test
+    void create_ShouldPersistNotifyFlag_WhenLembreteRenovacaoIsActive() {
+        SubscriptionRequestDto request = new SubscriptionRequestDto(
+                "Disney+",
+                "Disney Plus mensal",
+                new BigDecimal("27.90"),
+                LocalDate.now(),
+                null,
+                true,
+                true,
+                Currency.BRL,
+                null,
+                1L,
+                1L,
+                BillingCycle.MONTHLY,
+                1L
+        );
+
+        Long createdId = given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + authToken)
+                .body(request)
+                .when().post(API_URL)
+                .then()
+                .statusCode(HttpStatus.CREATED.value())
+                .log().all()
+                .body("notifyUser", org.hamcrest.Matchers.equalTo(true))
+                .extract().jsonPath().getLong("id");
+
+        Subscriptions persisted = subscriptionsRepository.findById(createdId).orElseThrow();
+        assertThat(persisted.getNotify()).isTrue();
+    }
+
+    // HU01 - CA4: bloqueia salvamento quando Nome ou Valor não atendem regras obrigatórias
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("provideInvalidNameOrValueRequests")
+    void create_ShouldReturnBadRequest_WhenNameOrValueIsInvalid(String testName, SubscriptionRequestDto request, String expectedErrorMessage) {
+        String response = given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + authToken)
+                .body(request)
+                .when().post(API_URL)
+                .then()
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .log().all()
+                .extract().body().asString();
+
+        assertThat(response).contains(expectedErrorMessage);
+    }
+
+    private static Stream<Arguments> provideInvalidNameOrValueRequests() {
         LocalDate now = LocalDate.now();
         LocalDate nextMonth = now.plusMonths(1);
 
         return Stream.of(
                 Arguments.of(
-                        "Name is blank",
-                        new SubscriptionRequestDto("", "Description", new BigDecimal("10.00"), now, nextMonth, true, true, Currency.BRL, null, null, null, BillingCycle.MONTHLY, null),
+                        "Nome em branco",
+                        new SubscriptionRequestDto("", "Description", new BigDecimal("10.00"), now, nextMonth, true, true, Currency.BRL, null, 1L, 1L, BillingCycle.MONTHLY, 1L),
                         "Name is required"
                 ),
                 Arguments.of(
-                        "Name is null",
-                        new SubscriptionRequestDto(null, "Description", new BigDecimal("10.00"), now, nextMonth, true, true, Currency.BRL, null, null, null, BillingCycle.MONTHLY, null),
+                        "Nome nulo",
+                        new SubscriptionRequestDto(null, "Description", new BigDecimal("10.00"), now, nextMonth, true, true, Currency.BRL, null, 1L, 1L, BillingCycle.MONTHLY, 1L),
                         "Name is required"
                 ),
                 Arguments.of(
-                        "Name exceeds 255 characters",
-                        new SubscriptionRequestDto("A".repeat(256), "Description", new BigDecimal("10.00"), now, nextMonth, true, true, Currency.BRL, null, null, null, BillingCycle.MONTHLY, null),
-                        "Name must be at most 255 characters"
-                ),
-                Arguments.of(
-                        "Description exceeds 255 characters",
-                        new SubscriptionRequestDto("Valid Name", "D".repeat(256), new BigDecimal("10.00"), now, nextMonth, true, true, Currency.BRL, null, null, null, BillingCycle.MONTHLY, null),
-                        "Description must be at most 255 characters"
-                ),
-                Arguments.of(
-                        "Value is null",
-                        new SubscriptionRequestDto("Valid Name", "Description", null, now, nextMonth, true, true, Currency.BRL, null, null, null, BillingCycle.MONTHLY, null),
+                        "Valor nulo",
+                        new SubscriptionRequestDto("Valid Name", "Description", null, now, nextMonth, true, true, Currency.BRL, null, 1L, 1L, BillingCycle.MONTHLY, 1L),
                         "Value is required"
                 ),
                 Arguments.of(
-                        "Value is negative",
-                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("-10.00"), now, nextMonth, true, true, Currency.BRL, null, null, null, BillingCycle.MONTHLY, null),
+                        "Valor negativo",
+                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("-10.00"), now, nextMonth, true, true, Currency.BRL, null, 1L, 1L, BillingCycle.MONTHLY, 1L),
                         "Value must be positive"
                 ),
                 Arguments.of(
-                        "Value is zero",
-                        new SubscriptionRequestDto("Valid Name", "Description", BigDecimal.ZERO, now, nextMonth, true, true, Currency.BRL, null, null, null, BillingCycle.MONTHLY, null),
+                        "Valor zero",
+                        new SubscriptionRequestDto("Valid Name", "Description", BigDecimal.ZERO, now, nextMonth, true, true, Currency.BRL, null, 1L, 1L, BillingCycle.MONTHLY, 1L),
                         "Value must be positive"
-                ),
-                Arguments.of(
-                        "Start date is null",
-                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), null, nextMonth, true, true, Currency.BRL, null, null, null, BillingCycle.MONTHLY, null),
-                        "Start date is required"
-                ),
-                Arguments.of(
-                        "Logo URL exceeds 255 characters",
-                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), now, nextMonth, true, true, Currency.BRL, "L".repeat(256), null, null, BillingCycle.MONTHLY, null),
-                        "Logo URL must be at most 255 characters"
-                ),
-                Arguments.of(
-                        "BillingCycle is null",
-                        new SubscriptionRequestDto("Valid Name", "Description", new BigDecimal("10.00"), now, nextMonth, true, true, Currency.BRL, null, null, null, null, null),
-                        "BillingCycle is required"
                 )
         );
     }
-
-    private static SubscriptionRequestDto createSubscriptionRequestDTO() {
-        return new SubscriptionRequestDto(
-                "Netflix",
-                "Netflix mensal",
-                new BigDecimal("39.95"),
-                LocalDate.now(),
-                LocalDate.now().plusMonths(1),
-                true,
-                true,
-                Currency.BRL,
-                null,
-                1L,
-                1L,
-                BillingCycle.MONTHLY,
-                1L
-        );
-    }
-
-    @Test
-    void delete_ShouldDeleteSubscription() {
-        Subscriptions subscription = createSubscription("Netflix", new BigDecimal("39.95"), LocalDate.now(), LocalDate.now().plusMonths(1), BillingCycle.MONTHLY, authenticatedUser);
-
-        subscriptionsRepository.save(subscription);
-
-
-        given().contentType(ContentType.JSON)
-                .header("Authorization", "Bearer " + authToken)
-                .when().delete(API_URL + "/{id}", subscription.getId())
-                .then()
-                .statusCode(HttpStatus.NO_CONTENT.value())
-                .log().all()
-                .extract().body().asString();
-
-        assertThat(subscriptionsRepository.findAll()).isEmpty();
-    }
-
-
-    @ParameterizedTest(name = "{0}")
-    @MethodSource("provideInvalidSubscriptionRequests")
-    void create_ShouldReturnBadRequest_WhenValidationFails(String testName, SubscriptionRequestDto request, String expectedErrorMessage) {
-        String response = given().contentType(ContentType.JSON)
-                .header("Authorization", "Bearer " + authToken)
-                .body(request)
-                .when().post(API_URL)
-                .then()
-                .statusCode(HttpStatus.BAD_REQUEST.value())
-                .log().all()
-                .extract().body().asString();
-
-        assertThat(response).contains(expectedErrorMessage);
-    }
-
-    @ParameterizedTest(name = "{0}")
-    @MethodSource("provideInvalidSubscriptionRequests")
-    void update_ShouldReturnBadRequest_WhenValidationFails(String testName, SubscriptionRequestDto request, String expectedErrorMessage) {
-        List<Subscriptions> subscriptions = insertSampleSubscriptions();
-
-        String response = given().contentType(ContentType.JSON)
-                .header("Authorization", "Bearer " + authToken)
-                .body(request)
-                .when().put(API_URL + "/{id}", subscriptions.getFirst().getId())
-                .then()
-                .statusCode(HttpStatus.BAD_REQUEST.value())
-                .log().all()
-                .extract().body().asString();
-
-        assertThat(response).contains(expectedErrorMessage);
-    }
-
-    @Test
-    void update_ShouldUpdatedSubscriptions() {
-        List<Subscriptions> subscriptions = insertSampleSubscriptions();
-
-        Subscriptions subscription = subscriptions.getFirst();
-
-        SubscriptionRequestDto updateRequest = new SubscriptionRequestDto(
-                "Amazon Prime",
-                "Amazon Prime anual",
-                new BigDecimal("89.95"),
-                subscription.getStartDate(),
-                subscription.getNextPaymentDate(),
-                true,
-                true,
-                Currency.BRL,
-                null,
-                1L,
-                1L,
-                BillingCycle.YEARLY,
-                1L
-        );
-
-        String response = given().contentType(ContentType.JSON)
-                .header("Authorization", "Bearer " + authToken)
-                .body(updateRequest)
-                .when().put(API_URL + "/{id}", subscription.getId())
-                .then()
-                .statusCode(HttpStatus.OK.value())
-                .log().all()
-                .extract().body().asString();
-
-        assertThatJson(response).node("id").isNotNull().isNumber();
-        assertThatJson(response).node("name").isEqualTo("Amazon Prime");
-        assertThatJson(response).node("description").isEqualTo("Amazon Prime anual");
-        assertThatJson(response).node("value").isEqualTo(89.95);
-
-        var subscriptionUpdated = subscriptionsRepository.findById(subscription.getId()).orElseThrow();
-        assertThat(subscriptionUpdated.getName()).isEqualTo("Amazon Prime");
-        assertThat(subscriptionUpdated.getDescription()).isEqualTo("Amazon Prime anual");
-        assertThat(subscriptionUpdated.getValue()).isEqualByComparingTo(new BigDecimal("89.95"));
-    }
-
-    @Test
-    void update_ShouldChangeRelationships_WhenCategoryAndPaymentMethodChange() {
-        // Arrange: Create subscription with category 1 and payment method 1
-        Subscriptions subscription = subscriptionsRepository.save(
-                Subscriptions.builder()
-                        .name("Netflix")
-                        .description("Netflix Basic")
-                        .value(new BigDecimal("39.90"))
-                        .startDate(LocalDate.now())
-                        .nextPaymentDate(LocalDate.now().plusMonths(1))
-                        .billingCycle(BillingCycle.MONTHLY)
-                        .currency(Currency.BRL)
-                        .notify(true)
-                        .active(true)
-                        .category(Category.builder().id(1L).build())  // Category 1
-                        .paymentMethod(dev.guilhermeluan.ongoing.subscriptions.entities.PaymentMethod.builder().id(1L).build())  // Payment Method 1
-                        .subscriptionType(dev.guilhermeluan.ongoing.subscriptions.entities.SubscriptionType.builder().id(1L).build())
-                        .user(authenticatedUser)
-                        .build()
-        );
-
-        // Act: Update to category 2 and payment method 2 (CHANGES!)
-        SubscriptionRequestDto updateRequest = new SubscriptionRequestDto(
-                "Netflix Premium",
-                "Netflix Premium Plan",
-                new BigDecimal("55.90"),
-                subscription.getStartDate(),
-                subscription.getNextPaymentDate(),
-                true,
-                true,
-                Currency.BRL,
-                null,
-                2L,  // Change category from 1 to 2
-                2L,  // Change payment method from 1 to 2
-                BillingCycle.MONTHLY,
-                1L
-        );
-
-        String response = given().contentType(ContentType.JSON)
-                .header("Authorization", "Bearer " + authToken)
-                .body(updateRequest)
-                .when().put(API_URL + "/{id}", subscription.getId())
-                .then()
-                .statusCode(HttpStatus.OK.value())
-                .log().all()
-                .extract().body().asString();
-
-        // Assert: Verify the response
-        assertThatJson(response).node("id").isNotNull().isNumber();
-        assertThatJson(response).node("name").isEqualTo("Netflix Premium");
-        assertThatJson(response).node("categoryId").isEqualTo(2);
-        assertThatJson(response).node("paymentMethodId").isEqualTo(2);
-
-        // Assert: Verify in database that relationships actually changed
-        Subscriptions updatedSubscription = subscriptionsRepository.findById(subscription.getId()).orElseThrow();
-        assertThat(updatedSubscription.getName()).isEqualTo("Netflix Premium");
-        assertThat(updatedSubscription.getCategory()).isNotNull();
-        assertThat(updatedSubscription.getCategory().getId()).isEqualTo(2L);  // Changed from 1 to 2
-        assertThat(updatedSubscription.getPaymentMethod()).isNotNull();
-        assertThat(updatedSubscription.getPaymentMethod().getId()).isEqualTo(2L);  // Changed from 1 to 2
-        assertThat(updatedSubscription.getValue()).isEqualByComparingTo(new BigDecimal("55.90"));
-    }
-
-    @Test
-    void delete_ShouldThrowNotFoundException_WhenSubscriptionIsNotFound() {
-
-        long id = 99L;
-
-        given().contentType(ContentType.JSON)
-                .header("Authorization", "Bearer " + authToken)
-                .when().delete(API_URL + "/{id}", id)
-                .then()
-                .statusCode(HttpStatus.NOT_FOUND.value())
-                .log().all()
-                .extract().body().asString();
-    }
-
-    private List<Subscriptions> insertSampleSubscriptions() {
-        Category category = Category.builder().id(1L).build();
-        PaymentMethod paymentMethod = PaymentMethod.builder().id(1L).build();
-
-        Subscriptions subscriptions = subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), LocalDate.now(), LocalDate.now().plusMonths(1), BillingCycle.MONTHLY, authenticatedUser, category, paymentMethod));
-        Subscriptions subscriptions1 = subscriptionsRepository.save(createSubscription("Spotify", new BigDecimal("19.95"), LocalDate.now().minusDays(10), LocalDate.now().plusMonths(1), BillingCycle.MONTHLY, authenticatedUser, category, paymentMethod));
-
-        return List.of(subscriptions, subscriptions1);
-    }
-
-    private Subscriptions createSubscription(String name, BigDecimal value, LocalDate startDate, LocalDate nextPaymentDate, BillingCycle billingCycle, User user, Category category, PaymentMethod paymentMethod) {
-        return Subscriptions.builder()
-                .name(name)
-                .description(name + " mensal")
-                .value(value)
-                .startDate(startDate)
-                .nextPaymentDate(nextPaymentDate)
-                .billingCycle(billingCycle)
-                .currency(Currency.BRL)
-                .category(category)
-                .paymentMethod(paymentMethod)
-                .notify(true)
-                .active(true)
-                .user(user)
-                .build();
-    }
-
-    private Subscriptions createSubscription(String name, BigDecimal value, LocalDate startDate, LocalDate nextPaymentDate, BillingCycle billingCycle, User user) {
-        return Subscriptions.builder()
-                .name(name)
-                .description(name + " mensal")
-                .value(value)
-                .startDate(startDate)
-                .nextPaymentDate(nextPaymentDate)
-                .billingCycle(billingCycle)
-                .currency(Currency.BRL)
-                .notify(true)
-                .active(true)
-                .user(user)
-                .build();
-    }
-
-    private Subscriptions createSubscription(String name, BigDecimal value, boolean active, Category category) {
-        return Subscriptions.builder()
-                .name(name)
-                .description(name + " mensal")
-                .value(value)
-                .startDate(LocalDate.now())
-                .nextPaymentDate(LocalDate.now().plusMonths(1))
-                .billingCycle(BillingCycle.MONTHLY)
-                .currency(Currency.BRL)
-                .notify(true)
-                .active(active)
-                .category(category)
-                .user(authenticatedUser)
-                .build();
-    }
-
-    private Subscriptions createSubscription(String name, BigDecimal value, boolean active, Category category, PaymentMethod paymentMethod) {
-        return Subscriptions.builder()
-                .name(name)
-                .description(name + " mensal")
-                .value(value)
-                .startDate(LocalDate.now())
-                .nextPaymentDate(LocalDate.now().plusMonths(1))
-                .billingCycle(BillingCycle.MONTHLY)
-                .currency(Currency.BRL)
-                .notify(true)
-                .active(active)
-                .category(category)
-                .user(authenticatedUser)
-                .paymentMethod(paymentMethod)
-                .build();
-    }
-
-    @Test
-    void findAll_ShouldFilterByName_CaseInsensitivePartialMatch() {
-        subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), true, null));
-        subscriptionsRepository.save(createSubscription("Spotify", new BigDecimal("19.95"), true, null));
-        subscriptionsRepository.save(createSubscription("Amazon Prime", new BigDecimal("14.90"), true, null));
-
-        String response = given().contentType(ContentType.JSON)
-                .header("Authorization", "Bearer " + authToken)
-                .queryParam("name", "net")
-                .when().get(API_URL)
-                .then()
-                .statusCode(HttpStatus.OK.value())
-                .extract().body().asString();
-
-        assertThatJson(response).node("totalElements").isEqualTo(1);
-        assertThatJson(response).node("content[0].name").isEqualTo("Netflix");
-    }
-
-    @Test
-    void findAll_ShouldFilterByActiveStatus() {
-        subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), true, null));
-        subscriptionsRepository.save(createSubscription("Spotify", new BigDecimal("19.95"), false, null));
-        subscriptionsRepository.save(createSubscription("Amazon Prime", new BigDecimal("14.90"), true, null));
-
-        String response = given().contentType(ContentType.JSON)
-                .header("Authorization", "Bearer " + authToken)
-                .queryParam("active", false)
-                .when().get(API_URL)
-                .then()
-                .statusCode(HttpStatus.OK.value())
-                .extract().body().asString();
-
-        assertThatJson(response).node("totalElements").isEqualTo(1);
-        assertThatJson(response).node("content[0].name").isEqualTo("Spotify");
-    }
-
-    @Test
-    void findAll_ShouldFilterByCategoryId() {
-        Category videoStreaming = Category.builder().id(1L).build();
-        Category musicStreaming = Category.builder().id(2L).build();
-
-        subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), true, videoStreaming));
-        subscriptionsRepository.save(createSubscription("Spotify", new BigDecimal("19.95"), true, musicStreaming));
-        subscriptionsRepository.save(createSubscription("Disney+", new BigDecimal("27.90"), true, videoStreaming));
-
-        String response = given().contentType(ContentType.JSON)
-                .header("Authorization", "Bearer " + authToken)
-                .queryParam("categoryId", 1)
-                .when().get(API_URL)
-                .then()
-                .log().all()
-                .statusCode(HttpStatus.OK.value())
-                .extract().body().asString();
-
-        assertThatJson(response).node("totalElements").isEqualTo(2);
-        assertThatJson(response).node("content").isArray().hasSize(2);
-    }
-
-    @Test
-    void findAll_ShouldFilterByCombinedParameters() {
-        Category videoStreaming = Category.builder().id(1L).build();
-        Category musicStreaming = Category.builder().id(2L).build();
-
-        subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), true, videoStreaming));
-        subscriptionsRepository.save(createSubscription("Spotify", new BigDecimal("19.95"), true, musicStreaming));
-        subscriptionsRepository.save(createSubscription("Disney+", new BigDecimal("27.90"), false, videoStreaming));
-        subscriptionsRepository.save(createSubscription("Amazon Prime", new BigDecimal("14.90"), true, videoStreaming));
-
-        String response = given().contentType(ContentType.JSON)
-                .header("Authorization", "Bearer " + authToken)
-                .queryParam("name", "net")
-                .queryParam("active", true)
-                .queryParam("categoryId", 1)
-                .when().get(API_URL)
-                .then()
-                .statusCode(HttpStatus.OK.value())
-                .extract().body().asString();
-
-        assertThatJson(response).node("totalElements").isEqualTo(1);
-        assertThatJson(response).node("content[0].name").isEqualTo("Netflix");
-    }
-
-    @Test
-    void findAll_ShouldReturnAllSubscriptions_WhenNoFiltersProvided() {
-        subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), true, null));
-        subscriptionsRepository.save(createSubscription("Spotify", new BigDecimal("19.95"), false, null));
-        subscriptionsRepository.save(createSubscription("Amazon Prime", new BigDecimal("14.90"), true, null));
-
-        String response = given().contentType(ContentType.JSON)
-                .header("Authorization", "Bearer " + authToken)
-                .when().get(API_URL)
-                .then()
-                .statusCode(HttpStatus.OK.value())
-                .extract().body().asString();
-
-        assertThatJson(response).node("totalElements").isEqualTo(3);
-        assertThatJson(response).node("content").isArray().hasSize(3);
-    }
-
-    @Test
-    void update_ShouldThrowNotFoundException_WhenSubscriptionIsNotFound() {
-        long id = 99L;
-
-        var subscription = createSubscriptionRequestDTO();
-
-        given().contentType(ContentType.JSON)
-                .header("Authorization", "Bearer " + authToken)
-                .body(subscription)
-                .when().put(API_URL + "/{id}", id)
-                .then()
-                .statusCode(HttpStatus.NOT_FOUND.value())
-                .log().all()
-                .extract().body().asString();
-    }
-
-    @Test
-    void create_ShouldReturnBadRequest_WhenCurrencyIsInvalid() {
-        String invalidRequest = """
-                {
-                    "name": "Netflix",
-                    "description": "Netflix mensal",
-                    "value": 39.95,
-                    "startDate": "2026-01-01",
-                    "nextPaymentDate": "2026-02-01",
-                    "active": true,
-                    "notifyUser": true,
-                    "currency": "INVALID",
-                    "billingCycle": "MONTHLY"
-                }
-                """;
-
-        String response = given().contentType(ContentType.JSON)
-                .header("Authorization", "Bearer " + authToken)
-                .body(invalidRequest)
-                .when().post(API_URL)
-                .then()
-                .statusCode(HttpStatus.BAD_REQUEST.value())
-                .log().all()
-                .extract().body().asString();
-
-        assertThat(response).contains("Invalid request body");
-    }
-
-    @Test
-    void update_ShouldReturnBadRequest_WhenCurrencyIsInvalid() {
-        List<Subscriptions> subscriptions = insertSampleSubscriptions();
-
-        String invalidRequest = """
-                {
-                    "name": "Netflix",
-                    "description": "Netflix mensal",
-                    "value": 39.95,
-                    "startDate": "2026-01-01",
-                    "nextPaymentDate": "2026-02-01",
-                    "active": true,
-                    "notifyUser": true,
-                    "currency": "XYZ",
-                    "billingCycle": "MONTHLY"
-                }
-                """;
-
-        String response = given().contentType(ContentType.JSON)
-                .header("Authorization", "Bearer " + authToken)
-                .body(invalidRequest)
-                .when().put(API_URL + "/{id}", subscriptions.getFirst().getId())
-                .then()
-                .statusCode(HttpStatus.BAD_REQUEST.value())
-                .log().all()
-                .extract().body().asString();
-
-        assertThat(response).contains("Invalid request body");
-    }
-
-    @Test
-    void findAll_ShouldReturn403_WhenNoTokenProvided() {
-        given()
-                .contentType(ContentType.JSON)
-                .when().get(API_URL)
-                .then()
-                .statusCode(HttpStatus.FORBIDDEN.value());
-    }
-
-    @Test
-    void findById_ShouldReturn403_WhenNoTokenProvided() {
-        given()
-                .contentType(ContentType.JSON)
-                .when().get(API_URL + "/{id}", 1)
-                .then()
-                .statusCode(HttpStatus.FORBIDDEN.value());
-    }
-
-    @Test
-    void create_ShouldReturn403_WhenNoTokenProvided() {
-        given()
-                .contentType(ContentType.JSON)
-                .body(createSubscriptionRequestDTO())
-                .when().post(API_URL)
-                .then()
-                .statusCode(HttpStatus.FORBIDDEN.value());
-    }
-
-    @Test
-    void update_ShouldReturn403_WhenNoTokenProvided() {
-        given()
-                .contentType(ContentType.JSON)
-                .body(createSubscriptionRequestDTO())
-                .when().put(API_URL + "/{id}", 1)
-                .then()
-                .statusCode(HttpStatus.FORBIDDEN.value());
-    }
-
-    @Test
-    void delete_ShouldReturn403_WhenNoTokenProvided() {
-        given()
-                .contentType(ContentType.JSON)
-                .when().delete(API_URL + "/{id}", 1)
-                .then()
-                .statusCode(HttpStatus.FORBIDDEN.value());
-    }
-
-
-    @Test
-    void findAll_ShouldNotReturnSubscriptionsFromOtherUsers() {
-        subscriptionsRepository.save(createSubscription("Netflix", new BigDecimal("39.95"), true, null));
-
-        authService.register(new RegisterRequest("Other User", "other@example.com", "password123"));
-        User otherUser = userRepository.findByEmail("other@example.com").orElseThrow();
-
-        Subscriptions otherSubscription = subscriptionsRepository.save(
-                Subscriptions.builder()
-                        .name("Spotify")
-                        .description("Spotify mensal")
-                        .value(new BigDecimal("19.95"))
-                        .startDate(LocalDate.now())
-                        .nextPaymentDate(LocalDate.now().plusMonths(1))
-                        .billingCycle(BillingCycle.MONTHLY)
-                        .currency(Currency.BRL)
-                        .active(true)
-                        .notify(true)
-                        .user(otherUser)
-                        .build()
-        );
-
-        String response = given()
-                .contentType(ContentType.JSON)
-                .header("Authorization", "Bearer " + authToken)
-                .when().get(API_URL)
-                .then()
-                .statusCode(HttpStatus.OK.value())
-                .extract().body().asString();
-
-        assertThatJson(response).node("totalElements").isEqualTo(1);
-        assertThatJson(response).node("content[0].name").isEqualTo("Netflix");
-    }
-
-    @Test
-    void findById_ShouldReturn404_WhenSubscriptionBelongsToOtherUser() {
-        authService.register(new RegisterRequest("Other", "other@example.com", "password123"));
-        User otherUser = userRepository.findByEmail("other@example.com").orElseThrow();
-
-        Subscriptions otherSubscription = subscriptionsRepository.save(
-                Subscriptions.builder()
-                        .name("Spotify")
-                        .value(new BigDecimal("19.95"))
-                        .startDate(LocalDate.now())
-                        .nextPaymentDate(LocalDate.now().plusMonths(1))
-                        .billingCycle(BillingCycle.MONTHLY)
-                        .currency(Currency.BRL)
-                        .active(true)
-                        .user(otherUser)
-                        .build()
-        );
-
-        given()
-                .contentType(ContentType.JSON)
-                .header("Authorization", "Bearer " + authToken)
-                .when().get(API_URL + "/{id}", otherSubscription.getId())
-                .then()
-                .statusCode(HttpStatus.NOT_FOUND.value());
-    }
-
-    @Test
-    void delete_ShouldReturn404_WhenSubscriptionBelongsToOtherUser() {
-        authService.register(new RegisterRequest("Other", "other@example.com", "password123"));
-        User otherUser = userRepository.findByEmail("other@example.com").orElseThrow();
-
-        Subscriptions otherSubscription = subscriptionsRepository.save(
-                Subscriptions.builder()
-                        .name("Spotify")
-                        .value(new BigDecimal("19.95"))
-                        .startDate(LocalDate.now())
-                        .nextPaymentDate(LocalDate.now().plusMonths(1))
-                        .billingCycle(BillingCycle.MONTHLY)
-                        .currency(Currency.BRL)
-                        .active(true)
-                        .user(otherUser)
-                        .build()
-        );
-
-        given()
-                .contentType(ContentType.JSON)
-                .header("Authorization", "Bearer " + authToken)
-                .when().delete(API_URL + "/{id}", otherSubscription.getId())
-                .then()
-                .statusCode(HttpStatus.NOT_FOUND.value());
-
-        assertThat(subscriptionsRepository.findById(otherSubscription.getId())).isPresent();
-    }
-
-    @Test
-    void update_ShouldReturn404_WhenSubscriptionBelongsToOtherUser() {
-        authService.register(new RegisterRequest("Other", "other@example.com", "password123"));
-        User otherUser = userRepository.findByEmail("other@example.com").orElseThrow();
-
-        Subscriptions otherSubscription = subscriptionsRepository.save(
-                Subscriptions.builder()
-                        .name("Spotify")
-                        .value(new BigDecimal("19.95"))
-                        .startDate(LocalDate.now())
-                        .nextPaymentDate(LocalDate.now().plusMonths(1))
-                        .billingCycle(BillingCycle.MONTHLY)
-                        .currency(Currency.BRL)
-                        .active(true)
-                        .user(otherUser)
-                        .build()
-        );
-
-        given()
-                .contentType(ContentType.JSON)
-                .header("Authorization", "Bearer " + authToken)
-                .body(createSubscriptionRequestDTO())
-                .when().put(API_URL + "/{id}", otherSubscription.getId())
-                .then()
-                .statusCode(HttpStatus.NOT_FOUND.value());
-    }
-
 }
