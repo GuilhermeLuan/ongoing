@@ -579,6 +579,61 @@ Lição prática: no iOS, o problema nem sempre é "a tela". Muitas vezes é com
 
 ---
 
+## Testes de Integração: o "Plano de Aula" virou o Plano de Testes
+
+Durante muito tempo o `SubscriptionsControllerIT` foi crescendo do jeito que os testes de integração costumam crescer:
+"ah, vou cobrir o filtro por nome também", "ah, multi-tenant é importante, deixa eu garantir", "ah, e se o token não
+vier? Vamos testar". No final, tinha trinta e tantos testes — uma cobertura larga, mas que não respondia uma pergunta
+simples: **quais testes provam que cada História de Usuário está atendida?**
+
+Para o trabalho de Teste de Software, isso virou um problema concreto. O plano de testes em `docs/plano de testes/` lista
+três HUs (HU01 Criar Assinatura, HU02 Realizar Logon, HU03 Realizar Cadastro), cada uma com seus Critérios de Aceitação
+(CA1, CA2, ...). O professor avalia "Qualidade e execução dos casos de teste" valendo 25% — e essa nota depende de ele
+conseguir abrir um teste, ler um comentário, e entender qual CA ele cobre. Um arquivo com 32 testes embaralhados não
+deixa isso evidente.
+
+A reorganização foi cirúrgica:
+
+- **`AuthControllerIT`** ficou com 8 testes, todos vinculados a HU02/HU03. Saíram os testes de refresh token, endpoint
+  protegido, e validação de bearer ausente — não porque sejam ruins, mas porque não pertencem ao escopo dessas três HUs.
+- **`SubscriptionsControllerIT`** ficou com 8 testes, todos cobrindo CA1/CA2/CA3/CA4 da HU01. Saíram todos os
+  find/update/delete, filtros, multi-tenant, validações secundárias.
+- **`StatusControllerIT`**, **`FlywayMigrationIT`**, **`NotificationRepositoryIT`**, **`RateLimitIT`** e
+  **`DashboardControllerIT`** foram deletados inteiros — bons testes, mas fora do escopo das HUs deste milestone.
+
+E o padrão de comentários que já estava nos testes unitários foi replicado:
+
+```java
+// HU03 - CA1: cadastro com sucesso ao fornecer dados válidos
+@Test
+void register_ShouldReturn201_WhenDataIsValid() { ... }
+```
+
+Resultado: passou de 6 arquivos IT com cobertura dispersa para 2 arquivos IT que mapeiam **diretamente** o plano de
+testes. Quem abre o arquivo agora consegue navegar HU → CA → teste em segundos.
+
+### Lições que ficam
+
+**Cobertura ampla nem sempre é cobertura boa.** Um teste só tem valor se alguém consegue dizer *o que ele prova*. Se você
+não consegue resumir o objetivo do teste em uma frase ligada a um requisito, ele provavelmente está testando
+implementação, não comportamento — e implementação muda, requisito não.
+
+**O comentário sobre o teste é parte do teste.** Pode parecer redundância ("o nome do método já diz", você pensa), mas o
+nome do método descreve mecanismo (`register_ShouldReturn400_WhenEmailAlreadyExists`) enquanto o comentário descreve
+intenção (`HU03 - CA2: erro quando e-mail já está cadastrado`). Mecanismo é para quem vai depurar; intenção é para quem
+vai avaliar.
+
+**Teste é entregável de documentação.** Quando um avaliador externo (professor, novo dev, auditor) abre o repositório, os
+testes são onde ele *prova* que o sistema faz o que diz fazer. Se a estrutura dos testes não bate com a estrutura dos
+requisitos, ele não consegue fazer essa verificação — e a percepção de qualidade despenca, independente do código estar
+correto. Alinhar testes a HUs custa horas; deixar desalinhado custa pontos.
+
+**O `target/` te trai.** Numa primeira tentativa de validar, o Maven rodou um `RateLimitIT` que eu já tinha deletado —
+porque o `.class` ainda estava em `target/test-classes`. Fica a regra: depois de deletar/renomear arquivos de teste,
+sempre `./mvnw clean verify`. Aprendi de novo, agora com fé.
+
+---
+
 ## Conclusão
 
 O Ongoing não é só um CRUD de assinaturas. É um exemplo de como estruturar uma aplicação Spring Boot moderna seguindo
