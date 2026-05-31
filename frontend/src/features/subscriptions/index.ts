@@ -1,4 +1,5 @@
 export {subscriptionService} from "./services/subscription.service";
+export {getDefaultPriceSpikeFilters, usePriceSpikes} from "./hooks/usePriceSpikes";
 export {useSubscriptions} from "./hooks/useSubscriptions";
 
 export {
@@ -24,6 +25,8 @@ export type {
     SubscriptionRequest,
     SubscriptionResponse,
     SubscriptionFilters,
+    SubscriptionPriceHistoryResponse,
+    PriceSpikesFilters,
     SpringPage,
     PopularService,
     CategoryOption,

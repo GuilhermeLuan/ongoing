@@ -1,8 +1,10 @@
 import {API_ENDPOINTS} from "@/lib/constants";
 import {apiClient} from "@/features/auth";
 import type {
+    PriceSpikesFilters,
     SpringPage,
     SubscriptionFilters,
+    SubscriptionPriceHistoryResponse,
     SubscriptionRequest,
     SubscriptionResponse,
 } from "../types/subscription.types";
@@ -61,10 +63,35 @@ const remove = async (id: number): Promise<void> => {
     await apiClient.delete(`${API_ENDPOINTS.SUBSCRIPTIONS}/${id}`);
 };
 
+const findPriceSpikes = async (
+    filters: PriceSpikesFilters
+): Promise<SubscriptionPriceHistoryResponse[]> => {
+    const response = await apiClient.get<SubscriptionPriceHistoryResponse[]>(
+        `${API_ENDPOINTS.SUBSCRIPTIONS}/price-spikes`,
+        {
+            params: filters,
+        }
+    );
+
+    return response.data;
+};
+
+const findPriceHistory = async (
+    subscriptionId: number
+): Promise<SubscriptionPriceHistoryResponse[]> => {
+    const response = await apiClient.get<SubscriptionPriceHistoryResponse[]>(
+        `${API_ENDPOINTS.SUBSCRIPTIONS}/${subscriptionId}/price-history`
+    );
+
+    return response.data;
+};
+
 export const subscriptionService = {
     findAll,
     findById,
     create,
     update,
     remove,
+    findPriceSpikes,
+    findPriceHistory,
 };
