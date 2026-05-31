@@ -6,6 +6,8 @@ import dev.guilhermeluan.ongoing.auth.dto.RegisterRequest;
 import dev.guilhermeluan.ongoing.config.BaseIntegrationTest;
 import dev.guilhermeluan.ongoing.subscriptions.dto.SubscriptionRequestDto;
 import dev.guilhermeluan.ongoing.subscriptions.entities.*;
+import dev.guilhermeluan.ongoing.subscriptions.pricehistory.SubscriptionPriceHistory;
+import dev.guilhermeluan.ongoing.subscriptions.pricehistory.SubscriptionPriceHistoryRepository;
 import dev.guilhermeluan.ongoing.user.RefreshTokenRepository;
 import dev.guilhermeluan.ongoing.user.User;
 import dev.guilhermeluan.ongoing.user.UserRepository;
@@ -20,6 +22,7 @@ import org.springframework.http.HttpStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -40,12 +43,16 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
     private RefreshTokenRepository refreshTokenRepository;
     @Autowired
     private AuthService authService;
+    @Autowired
+    private SubscriptionPriceHistoryRepository subscriptionPriceHistoryRepository;
+
 
     private String authToken;
     private User authenticatedUser;
 
     @BeforeEach
     void setUpTestData() {
+        subscriptionPriceHistoryRepository.deleteAll();
         subscriptionsRepository.deleteAll();
         refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
@@ -61,6 +68,87 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
         this.authenticatedUser = userRepository.findByEmail(request.email()).orElseThrow();
     }
 
+
+    @Test
+    void findPriceHistoryById_ShouldReturnPriceHistoryOrderedByChangedAtDesc() {
+        Subscriptions subscription = subscriptionsRepository.save(
+                createSubscription("Netflix", new BigDecimal("39.95"), LocalDate.now(), LocalDate.now().plusMonths(1), BillingCycle.MONTHLY, authenticatedUser)
+        );
+
+        SubscriptionPriceHistory olderHistory = subscriptionPriceHistoryRepository.save(
+                SubscriptionPriceHistory.builder()
+                        .subscription(subscription)
+                        .user(authenticatedUser)
+                        .oldValue(new BigDecimal("29.95"))
+                        .newValue(new BigDecimal("39.95"))
+                        .changePercentage(new BigDecimal("33.39"))
+                        .isPriceSpike(true)
+                        .changedAt(LocalDateTime.now().minusDays(2))
+                        .build()
+        );
+
+        SubscriptionPriceHistory newerHistory = subscriptionPriceHistoryRepository.save(
+                SubscriptionPriceHistory.builder()
+                        .subscription(subscription)
+                        .user(authenticatedUser)
+                        .oldValue(new BigDecimal("39.95"))
+                        .newValue(new BigDecimal("49.95"))
+                        .changePercentage(new BigDecimal("25.03"))
+                        .isPriceSpike(true)
+                        .changedAt(LocalDateTime.now().minusDays(1))
+                        .build()
+        );
+
+        String response = given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + authToken)
+                .when().get(API_URL + "/{id}/price-history", subscription.getId())
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .log().all()
+                .extract().body().asString();
+
+        assertThatJson(response).isArray().hasSize(2);
+        assertThatJson(response).node("[0].id").isEqualTo(newerHistory.getId());
+        assertThatJson(response).node("[0].oldValue").isEqualTo(39.95);
+        assertThatJson(response).node("[0].newValue").isEqualTo(49.95);
+        assertThatJson(response).node("[0].isPriceSpike").isEqualTo(true);
+        assertThatJson(response).node("[0].changedAt").isString();
+        assertThatJson(response).node("[1].id").isEqualTo(olderHistory.getId());
+        assertThatJson(response).node("[1].oldValue").isEqualTo(29.95);
+        assertThatJson(response).node("[1].newValue").isEqualTo(39.95);
+    }
+
+    @Test
+    void findPriceHistoryById_ShouldNotReturnHistoryFromOtherUsers() {
+        Subscriptions subscription = subscriptionsRepository.save(
+                createSubscription("Netflix", new BigDecimal("39.95"), LocalDate.now(), LocalDate.now().plusMonths(1), BillingCycle.MONTHLY, authenticatedUser)
+        );
+
+        authService.register(new RegisterRequest("Other User", "other-history@example.com", "password123"));
+        User otherUser = userRepository.findByEmail("other-history@example.com").orElseThrow();
+
+        subscriptionPriceHistoryRepository.save(
+                SubscriptionPriceHistory.builder()
+                        .subscription(subscription)
+                        .user(otherUser)
+                        .oldValue(new BigDecimal("19.95"))
+                        .newValue(new BigDecimal("39.95"))
+                        .changePercentage(new BigDecimal("100.25"))
+                        .isPriceSpike(true)
+                        .changedAt(LocalDateTime.now().minusDays(1))
+                        .build()
+        );
+
+        String response = given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + authToken)
+                .when().get(API_URL + "/{id}/price-history", subscription.getId())
+                .then()
+                .log().all()
+                .statusCode(HttpStatus.OK.value())
+                .extract().body().asString();
+
+        assertThatJson(response).isArray().isEmpty();
+    }
 
     @Test
     void findAll_ShouldReturnAllSubscriptions() {
@@ -277,6 +365,7 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
         List<Subscriptions> subscriptions = insertSampleSubscriptions();
 
         Subscriptions subscription = subscriptions.getFirst();
+        BigDecimal previousValue = subscription.getValue();
 
         SubscriptionRequestDto updateRequest = new SubscriptionRequestDto(
                 "Amazon Prime",
@@ -312,6 +401,79 @@ class SubscriptionsControllerIT extends BaseIntegrationTest {
         assertThat(subscriptionUpdated.getName()).isEqualTo("Amazon Prime");
         assertThat(subscriptionUpdated.getDescription()).isEqualTo("Amazon Prime anual");
         assertThat(subscriptionUpdated.getValue()).isEqualByComparingTo(new BigDecimal("89.95"));
+
+        var priceHistory = subscriptionPriceHistoryRepository.findAll();
+        assertThat(priceHistory).hasSize(1);
+        assertThat(priceHistory.getFirst().getOldValue()).isEqualByComparingTo(previousValue);
+        assertThat(priceHistory.getFirst().getNewValue()).isEqualByComparingTo(new BigDecimal("89.95"));
+        assertThat(priceHistory.getFirst().getIsPriceSpike()).isFalse();
+    }
+
+    @Test
+    void update_ShouldNotCreatePriceHistory_WhenValueIsUnchanged() {
+        List<Subscriptions> subscriptions = insertSampleSubscriptions();
+        Subscriptions subscription = subscriptions.getFirst();
+
+        SubscriptionRequestDto updateRequest = new SubscriptionRequestDto(
+                "Netflix Premium",
+                "Novo nome sem alterar valor",
+                subscription.getValue(),
+                subscription.getStartDate(),
+                subscription.getNextPaymentDate(),
+                true,
+                true,
+                Currency.BRL,
+                null,
+                1L,
+                1L,
+                BillingCycle.MONTHLY,
+                1L
+        );
+
+        given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + authToken)
+                .body(updateRequest)
+                .when().put(API_URL + "/{id}", subscription.getId())
+                .then()
+                .statusCode(HttpStatus.OK.value());
+
+        assertThat(subscriptionPriceHistoryRepository.findAll()).isEmpty();
+    }
+
+    @Test
+    void update_ShouldMarkPriceSpike_WhenIncreaseIsGreaterOrEqualTenPercent() {
+        List<Subscriptions> subscriptions = insertSampleSubscriptions();
+        Subscriptions subscription = subscriptions.getFirst();
+
+        SubscriptionRequestDto updateRequest = new SubscriptionRequestDto(
+                subscription.getName(),
+                subscription.getDescription(),
+                new BigDecimal("44.00"),
+                subscription.getStartDate(),
+                subscription.getNextPaymentDate(),
+                true,
+                true,
+                Currency.BRL,
+                null,
+                1L,
+                1L,
+                BillingCycle.MONTHLY,
+                1L
+        );
+
+        given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + authToken)
+                .body(updateRequest)
+                .when().put(API_URL + "/{id}", subscription.getId())
+                .then()
+                .statusCode(HttpStatus.OK.value());
+
+        var priceHistory = subscriptionPriceHistoryRepository.findAll();
+        assertThat(priceHistory).hasSize(1);
+        assertThat(priceHistory.getFirst().getOldValue()).isEqualByComparingTo(new BigDecimal("39.95"));
+        assertThat(priceHistory.getFirst().getNewValue()).isEqualByComparingTo(new BigDecimal("44.00"));
+        assertThat(priceHistory.getFirst().getChangePercentage()).isEqualByComparingTo(new BigDecimal("10.14"));
+        assertThat(priceHistory.getFirst().getIsPriceSpike()).isTrue();
     }
 
     @Test
