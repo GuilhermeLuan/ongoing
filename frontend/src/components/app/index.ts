@@ -5,6 +5,7 @@ export { SubscriptionCard } from "./SubscriptionCard";
 export { SubscriptionList } from "./SubscriptionList";
 export {SubscriptionForm} from "./SubscriptionForm";
 export {SubscriptionsPageContent} from "./SubscriptionsPageContent";
+export {PriceHistoryPageContent} from "./PriceHistoryPageContent";
 export { SidebarProvider, useSidebar } from "./SidebarContext";
 export {ServicePicker} from "./ServicePicker";
 export {SubscriptionHeader} from "./SubscriptionHeader";

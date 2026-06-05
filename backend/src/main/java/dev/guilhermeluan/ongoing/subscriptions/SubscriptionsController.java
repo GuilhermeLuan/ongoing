@@ -1,9 +1,12 @@
 package dev.guilhermeluan.ongoing.subscriptions;
 
 import dev.guilhermeluan.ongoing.auth.jwt.UserPrincipal;
+import dev.guilhermeluan.ongoing.subscriptions.dto.SubscriptionPriceHistoryResponseDto;
 import dev.guilhermeluan.ongoing.subscriptions.dto.SubscriptionRequestDto;
 import dev.guilhermeluan.ongoing.subscriptions.dto.SubscriptionResponseDto;
 import dev.guilhermeluan.ongoing.subscriptions.entities.Subscriptions;
+import dev.guilhermeluan.ongoing.subscriptions.pricehistory.SubscriptionPriceHistory;
+import dev.guilhermeluan.ongoing.subscriptions.pricehistory.SubscriptionPriceHistoryRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -12,7 +15,12 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/subscriptions")
@@ -22,6 +30,7 @@ public class SubscriptionsController {
     private final SubscriptionsMapper subscriptionsMapper;
 
     private final SubscriptionsService subscriptionsService;
+    private final SubscriptionPriceHistoryRepository subscriptionPriceHistoryRepository;
 
     @GetMapping
     public ResponseEntity<Page<SubscriptionResponseDto>> findAll(
@@ -55,6 +64,41 @@ public class SubscriptionsController {
         return ResponseEntity.status(HttpStatus.OK.value()).body(response);
     }
 
+    @GetMapping("/{id}/price-history")
+    ResponseEntity<List<SubscriptionPriceHistoryResponseDto>>  findPriceHistoryById(
+            @PathVariable long id,
+            Authentication auth) {
+        Long userId = ((UserPrincipal) auth.getPrincipal()).id();
+
+        List<SubscriptionPriceHistory> priceHistories = subscriptionPriceHistoryRepository.findBySubscription_IdAndUser_IdOrderByChangedAtDesc(id, userId);
+
+        List<SubscriptionPriceHistoryResponseDto> response = subscriptionsMapper.toSubscriptionPriceHistoryResponse(priceHistories);
+
+        return  ResponseEntity.status(HttpStatus.OK.value()).body(response);
+    }
+
+    @GetMapping("/price-spikes")
+    ResponseEntity<List<SubscriptionPriceHistoryResponseDto>> findPriceSpikes(
+            Authentication auth,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        Long userId = ((UserPrincipal) auth.getPrincipal()).id();
+
+        LocalDate today = LocalDate.now();
+        LocalDate fromDate = from != null ? from : today.minusDays(30);
+        LocalDate toDate = to != null ? to : today;
+
+        List<SubscriptionPriceHistory> priceHistories = subscriptionPriceHistoryRepository.findByUser_IdAndIsPriceSpikeTrueAndChangedAtBetweenOrderByChangedAtDesc(
+                userId,
+                fromDate.atStartOfDay(),
+                toDate.atTime(LocalTime.MAX)
+        );
+
+        List<SubscriptionPriceHistoryResponseDto> response = subscriptionsMapper.toSubscriptionPriceHistoryResponse(priceHistories);
+
+        return  ResponseEntity.status(HttpStatus.OK.value()).body(response);
+    }
+
     @PostMapping
     public ResponseEntity<SubscriptionResponseDto> create(@RequestBody @Valid SubscriptionRequestDto request, Authentication auth) {
 
@@ -73,11 +117,7 @@ public class SubscriptionsController {
     public ResponseEntity<SubscriptionResponseDto> update(@PathVariable long id, @RequestBody @Valid SubscriptionRequestDto request, Authentication auth) {
 
         Long userId = ((UserPrincipal) auth.getPrincipal()).id();
-        Subscriptions subscription = subscriptionsService.findByIdOrThrowNotFoundException(id, userId);
-
-        subscriptionsMapper.updateSubscriptionFromDto(request, subscription);
-
-        Subscriptions updatedSubscription = subscriptionsService.update(id, subscription, userId);
+        Subscriptions updatedSubscription = subscriptionsService.update(id, request, userId);
 
         SubscriptionResponseDto response = subscriptionsMapper.toSubscriptionResponse(updatedSubscription);
 

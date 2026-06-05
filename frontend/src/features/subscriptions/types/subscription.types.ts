@@ -63,6 +63,21 @@ export interface SubscriptionFilters {
     size?: number;
 }
 
+export interface SubscriptionPriceHistoryResponse {
+    id: number;
+    subscriptionId: number;
+    oldValue: number;
+    newValue: number;
+    changePercentage: number;
+    isPriceSpike: boolean;
+    changedAt: string;
+}
+
+export interface PriceSpikesFilters {
+    from: string;
+    to: string;
+}
+
 export interface PopularService {
     name: string;
     logoUrl: string;
