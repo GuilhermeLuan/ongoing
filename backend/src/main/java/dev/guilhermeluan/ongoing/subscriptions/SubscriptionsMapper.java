@@ -1,11 +1,13 @@
 package dev.guilhermeluan.ongoing.subscriptions;
 
 import dev.guilhermeluan.ongoing.subscriptions.dto.SubscriptionRequestDto;
+import dev.guilhermeluan.ongoing.subscriptions.dto.SubscriptionPriceHistoryResponseDto;
 import dev.guilhermeluan.ongoing.subscriptions.dto.SubscriptionResponseDto;
 import dev.guilhermeluan.ongoing.subscriptions.entities.Category;
 import dev.guilhermeluan.ongoing.subscriptions.entities.PaymentMethod;
 import dev.guilhermeluan.ongoing.subscriptions.entities.SubscriptionType;
 import dev.guilhermeluan.ongoing.subscriptions.entities.Subscriptions;
+import dev.guilhermeluan.ongoing.subscriptions.pricehistory.SubscriptionPriceHistory;
 import org.mapstruct.*;
 import org.springframework.data.domain.Page;
 
@@ -25,6 +27,11 @@ public interface SubscriptionsMapper {
     List<SubscriptionResponseDto> toSubscriptionResponse(List<Subscriptions> subscriptions);
 
     List<SubscriptionResponseDto> toSubscriptionResponse(Page<Subscriptions> subscriptions);
+
+    @Mapping(source = "subscription.id", target = "subscriptionId")
+    SubscriptionPriceHistoryResponseDto toSubscriptionPriceHistoryResponse(SubscriptionPriceHistory priceHistory);
+
+    List<SubscriptionPriceHistoryResponseDto> toSubscriptionPriceHistoryResponse(List<SubscriptionPriceHistory> priceHistories);
 
 
     @Mapping(source = "notifyUser", target = "notify")

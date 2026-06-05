@@ -1,6 +1,7 @@
 package dev.guilhermeluan.ongoing.subscriptions;
 
 import dev.guilhermeluan.ongoing.auth.jwt.UserPrincipal;
+import dev.guilhermeluan.ongoing.subscriptions.dto.SubscriptionPriceHistoryResponseDto;
 import dev.guilhermeluan.ongoing.subscriptions.dto.SubscriptionRequestDto;
 import dev.guilhermeluan.ongoing.subscriptions.dto.SubscriptionResponseDto;
 import dev.guilhermeluan.ongoing.subscriptions.entities.Subscriptions;
@@ -14,8 +15,11 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @RestController
@@ -61,12 +65,38 @@ public class SubscriptionsController {
     }
 
     @GetMapping("/{id}/price-history")
-    ResponseEntity<List<SubscriptionPriceHistory>>  findPriceHistoryById(@PathVariable long id, Authentication auth) {
+    ResponseEntity<List<SubscriptionPriceHistoryResponseDto>>  findPriceHistoryById(
+            @PathVariable long id,
+            Authentication auth) {
         Long userId = ((UserPrincipal) auth.getPrincipal()).id();
 
         List<SubscriptionPriceHistory> priceHistories = subscriptionPriceHistoryRepository.findBySubscription_IdAndUser_IdOrderByChangedAtDesc(id, userId);
 
-        return  ResponseEntity.status(HttpStatus.OK.value()).body(priceHistories);
+        List<SubscriptionPriceHistoryResponseDto> response = subscriptionsMapper.toSubscriptionPriceHistoryResponse(priceHistories);
+
+        return  ResponseEntity.status(HttpStatus.OK.value()).body(response);
+    }
+
+    @GetMapping("/price-spikes")
+    ResponseEntity<List<SubscriptionPriceHistoryResponseDto>> findPriceSpikes(
+            Authentication auth,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        Long userId = ((UserPrincipal) auth.getPrincipal()).id();
+
+        LocalDate today = LocalDate.now();
+        LocalDate fromDate = from != null ? from : today.minusDays(30);
+        LocalDate toDate = to != null ? to : today;
+
+        List<SubscriptionPriceHistory> priceHistories = subscriptionPriceHistoryRepository.findByUser_IdAndIsPriceSpikeTrueAndChangedAtBetweenOrderByChangedAtDesc(
+                userId,
+                fromDate.atStartOfDay(),
+                toDate.atTime(LocalTime.MAX)
+        );
+
+        List<SubscriptionPriceHistoryResponseDto> response = subscriptionsMapper.toSubscriptionPriceHistoryResponse(priceHistories);
+
+        return  ResponseEntity.status(HttpStatus.OK.value()).body(response);
     }
 
     @PostMapping
